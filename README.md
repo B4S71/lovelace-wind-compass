@@ -2,7 +2,7 @@
 
 A professional wind rose compass for Home Assistant. It visualizes wind speed, direction, and history in a linear tape style, similar to aviation or marine navigation displays.
 
-![Screenshot](hhttps://raw.githubusercontent.com/B4S71/lovelace-wind-compass/refs/heads/docs/screenshots/screenshots/dark.png) 
+![Screenshot](https://raw.githubusercontent.com/B4S71/lovelace-wind-compass/refs/heads/docs/screenshots/screenshots/dark.png) 
 ## Features
 
 * **Linear Compass Tape:** Smooth sliding compass showing 360° direction.
