@@ -1,7 +1,7 @@
 {
   "name": "Lovelace Slick Screen Cards",
   "render_readme": true,
-  "homeassistant": "2026.1.0",
-  "iot_class": "cloud_polling",
+  "homeassistant": "2024.1.0",
+  "content_in_root": false,
   "filename": "dist/slick-screen-cards.js"
 }
