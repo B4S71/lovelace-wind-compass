@@ -32,7 +32,7 @@ jobs:
       - name: Create release archive
         run: |
           cd dist
-          zip -r ../wind-compass-card.zip wind-compass-card.js wind-compass-card.js.map
+          zip -r ../slick-screen-cards.zip slick-screen-cards.js slick-screen-cards.js.map
           cd ..
 
       - name: Extract version from tag
@@ -43,9 +43,15 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
+            dist/slick-screen-cards.js
+            dist/slick-screen-cards.js.map
             dist/wind-compass-card.js
             dist/wind-compass-card.js.map
-            wind-compass-card.zip
+            dist/minimal-weather-card.js
+            dist/minimal-weather-card.js.map
+            dist/squircle-clock-card.js
+            dist/squircle-clock-card.js.map
+            slick-screen-cards.zip
           generate_release_notes: true
           draft: false
           prerelease: false
