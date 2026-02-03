@@ -87,6 +87,36 @@ timezone: Europe/Berlin       # Optional: specific timezone
 timezone_entity: sensor.timezone # Optional: get timezone from entity
 ```
 
+### 4. Heating/Cooling Card 🌡️
+
+A professional climate control visualization card showing heating and cooling setpoints with a comfort zone indicator.
+
+#### Features
+
+* **Dual Control Visualization:** Blue bar for heating setpoint, red bar for cooling setpoint
+* **Comfort Zone:** Green zone shows the deadzone between heating and cooling
+* **Current Temperature Indicator:** Gold marker and line show current temperature position
+* **Responsive SVG:** Adapts to container size with ResizeObserver
+* **Temperature Scale:** Configurable min/max temperature range
+* **Unit Display:** Shows °C, °F, or custom units from entity
+
+#### Configuration
+
+```yaml
+type: custom:heating-cooling-card
+entity: climate.living_room    # Climate entity with setpoint attributes
+title: "Climate Control"       # Card title (optional)
+min_temp: 15                   # Minimum temperature for scale (default: 15)
+max_temp: 30                   # Maximum temperature for scale (default: 30)
+unit: "°C"                     # Temperature unit override (optional)
+```
+
+The card automatically reads from climate entity attributes:
+- `target_temp_low` — Heating setpoint (blue bar, from left)
+- `target_temp_high` — Cooling setpoint (red bar, from right)  
+- `current_temperature` — Current room temperature (gold indicator)
+- Falls back to `target_temperature` if `target_temp_high` not available
+
 ## Installation
 
 All cards are built together as part of the same package.
@@ -103,11 +133,13 @@ All cards are built together as part of the same package.
     - `wind-compass-card.js`
     - `minimal-weather-card.js`
     - `squircle-clock-card.js`
+    - `heating-cooling-card.js`
 2.  Upload them to your `/config/www/` directory
 3.  Add the corresponding files to your Dashboard Resources:
     - `/local/wind-compass-card.js`
     - `/local/minimal-weather-card.js`
     - `/local/squircle-clock-card.js`
+    - `/local/heating-cooling-card.js`
 
 ### Development
 
@@ -172,7 +204,8 @@ The CI workflow runs on every push and pull request to `main`/`master`:
 │   ├── types.ts           # Shared type definitions
 │   ├── wind-compass-card.ts
 │   ├── minimal-weather-card.ts
-│   └── squircle-clock-card.ts
+│   ├── squircle-clock-card.ts
+│   └── heating-cooling-card.ts
 ├── dist/                  # Built JavaScript files (generated)
 ├── rollup.config.mjs     # Build configuration
 ├── tsconfig.json         # TypeScript configuration

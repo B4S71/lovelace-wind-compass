@@ -1,0 +1,39 @@
+# Example Home Assistant YAML configuration for Heating/Cooling Card
+
+# For Climate Entities (most common - e.g., Hue, Ecobee, Smart Thermostat)
+# The card automatically reads these attributes:
+# - current_temperature (from entity state or attributes)
+# - target_temp_low (heating setpoint)
+# - target_temp_high (cooling setpoint)
+
+example_living_room:
+  type: custom:heating-cooling-card
+  entity: climate.living_room
+  title: "Living Room Climate"
+  min_temp: 15
+  max_temp: 30
+
+example_bedroom:
+  type: custom:heating-cooling-card
+  entity: climate.bedroom
+  title: "Bedroom"
+  min_temp: 10
+  max_temp: 28
+
+# Using with different temperature units
+example_fahrenheit:
+  type: custom:heating-cooling-card
+  entity: climate.us_thermostat
+  title: "Thermostat (°F)"
+  min_temp: 60
+  max_temp: 85
+  unit: "°F"
+
+# Using with custom temperature range for better visualization
+example_hospital:
+  type: custom:heating-cooling-card
+  entity: climate.operating_room
+  title: "Operating Room"
+  min_temp: 18
+  max_temp: 26
+  unit: "°C"

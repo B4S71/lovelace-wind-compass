@@ -7,6 +7,7 @@
 import './wind-compass-card';
 import './minimal-weather-card';
 import './squircle-clock-card';
+import './heating-cooling-card';
 
 console.info(
   '%c Lovelace Slick Screen Cards Loaded ',
