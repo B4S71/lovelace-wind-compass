@@ -57,4 +57,34 @@ export interface BucketData {
     duration: number;
     totalSpeed: number;
 }
+export interface MiniWeatherCardConfig extends LovelaceCardConfig {
+    type: 'custom:mini-weather-card';
+    entity: string;
+    title?: string;
+    mode?: 'daily' | 'hourly';
+    temp_sensor?: string;
+    history_entity?: string;
+    sun_entity?: string;
+    sampling_size?: number;
+    history_hours?: number;
+}
+export interface ForecastData {
+    datetime: string;
+    condition: string;
+    temperature?: number;
+    temp_max?: number;
+    templow?: number;
+    temp_min?: number;
+}
+export interface HistoryDataPoint {
+    time: number;
+    state: number;
+}
+export interface SquircleClockCardConfig extends LovelaceCardConfig {
+    type: 'custom:squircle-clock-card';
+    display_mode?: 'analog' | 'digital';
+    font_style?: 'standard' | 'thin' | 'retro';
+    timezone?: string;
+    timezone_entity?: string;
+}
 //# sourceMappingURL=types.d.ts.map
