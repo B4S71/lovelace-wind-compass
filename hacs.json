@@ -3,22 +3,5 @@
   "render_readme": true,
   "homeassistant": "2026.1.0",
   "iot_class": "cloud_polling",
-  "filename": "dist/wind-compass-card.js",
-  "resources": [
-    {
-      "url": "/dist/wind-compass-card.js",
-      "type": "module",
-      "name": "Wind Compass Card"
-    },
-    {
-      "url": "/dist/minimal-weather-card.js",
-      "type": "module",
-      "name": "Minimal Weather Card"
-    },
-    {
-      "url": "/dist/squircle-clock-card.js",
-      "type": "module",
-      "name": "Squircle Clock Card"
-    }
-  ]
+  "filename": "dist/slick-screen-cards.js"
 }
