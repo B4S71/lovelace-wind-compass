@@ -303,4 +303,4 @@ class HeatingCoolingCard extends HTMLElement {
   }
 }
 
-customElements.define('custom:heating-cooling-card', HeatingCoolingCard);
+customElements.define('heating-cooling-card', HeatingCoolingCard);
