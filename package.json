@@ -4,7 +4,7 @@
   "description": "Collection of professional custom cards for Home Assistant",
   "main": "dist/wind-compass-card.js",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && cp dist/slick-screen-cards.js slick-screen-cards.js",
     "watch": "rollup -c --watch",
     "lint": "eslint src/**/*.ts"
   },

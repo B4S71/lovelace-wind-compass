@@ -3,5 +3,5 @@
   "render_readme": true,
   "homeassistant": "2026.1.0",
   "iot_class": "cloud_polling",
-  "filename": "dist/slick-screen-cards.js"
+  "filename": "slick-screen-cards.js"
 }
