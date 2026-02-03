@@ -29,9 +29,6 @@ export default [
       format: 'es',
       sourcemap: true
     },
-    external: [
-      /^https:\/\//
-    ],
     plugins: [
       resolve(),
       typescript({
