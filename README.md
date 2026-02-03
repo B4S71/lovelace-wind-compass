@@ -1,9 +1,9 @@
-# Wind Compass Card 🧭
+## Wind Compass Card 🧭
 
 A professional wind rose compass for Home Assistant. It visualizes wind speed, direction, and history in a linear tape style, similar to aviation or marine navigation displays. Built with TypeScript for reliability and maintainability.
 
 ![Screenshot](https://github.com/B4S71/lovelace-wind-compass/blob/master/screenshots/dark.png?raw=true)
-## Features
+### Features
 
 * **TypeScript:** Type-safe, maintainable codebase
 * **Linear Compass Tape:** Smooth sliding compass showing 360° direction.
@@ -13,29 +13,29 @@ A professional wind rose compass for Home Assistant. It visualizes wind speed, d
 * **Visual Limits:** Markers for Raffstore/Blind limits.
 * **Critical Alerts:** Bars turn **RED** and opaque if wind speed exceeded a safety threshold (90% of limit).
 
-## Installation
+### Installation
 
-### HACS (Recommended)
+#### HACS (Recommended)
 1.  Open HACS > Frontend.
 2.  Click the 3 dots (top right) > **Custom repositories**.
 3.  Add the URL of this GitHub repository.
 4.  Category: **Lovelace**.
 5.  Click **Download**.
 
-### Manual
+#### Manual
 1.  Download `wind-compass-card.js` from the `dist/` folder in the releases.
 2.  Upload it to your `/config/www/` directory.
 3.  Add `/local/wind-compass-card.js` to your Dashboard Resources.
 
-## Development
+### Development
 
 This card is built with TypeScript for improved code quality and maintainability.
 
-### Prerequisites
+#### Prerequisites
 - Node.js (v18 or higher recommended)
 - npm
 
-### Building from Source
+#### Building from Source
 
 ```bash
 # Install dependencies
@@ -53,11 +53,11 @@ npm run lint
 
 The built files will be in the `dist/` directory.
 
-## Releasing
+### Releasing
 
 This project uses GitHub Actions for automated builds and releases.
 
-### Creating a Release
+#### Creating a Release
 
 1. Update the version in `package.json`
 2. Commit the changes
@@ -72,14 +72,14 @@ This project uses GitHub Actions for automated builds and releases.
    - Attach the built files (`wind-compass-card.js` and source map)
    - Create a zip archive of the release
 
-### Continuous Integration
+#### Continuous Integration
 
 The CI workflow runs on every push and pull request to `main`/`master`:
 - Lints the TypeScript code
 - Builds the project
 - Uploads build artifacts for inspection
 
-## Configuration
+### Configuration
 
 ```yaml
 type: custom:wind-compass-card
