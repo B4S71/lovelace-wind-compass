@@ -100,3 +100,13 @@ export interface SquircleClockCardConfig extends LovelaceCardConfig {
   timezone?: string;
   timezone_entity?: string;
 }
+
+// Heating/Cooling Card Types
+export interface HeatingCoolingCardConfig extends LovelaceCardConfig {
+  type: 'custom:heating-cooling-card';
+  entity: string;
+  title?: string;
+  min_temp?: number;
+  max_temp?: number;
+  unit?: string;
+}

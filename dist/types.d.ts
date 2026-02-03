@@ -88,4 +88,12 @@ export interface SquircleClockCardConfig extends LovelaceCardConfig {
     timezone?: string;
     timezone_entity?: string;
 }
+export interface HeatingCoolingCardConfig extends LovelaceCardConfig {
+    type: 'custom:heating-cooling-card';
+    entity: string;
+    title?: string;
+    min_temp?: number;
+    max_temp?: number;
+    unit?: string;
+}
 //# sourceMappingURL=types.d.ts.map
