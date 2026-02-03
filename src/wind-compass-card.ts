@@ -18,13 +18,11 @@ class WindCompassCard extends HTMLElement {
   // Configuration
   private _bucketSize: number = 5;
   private _bucketCount: number = 72;
-  private _warnMultiplier: number = 0.9;
   
   // State
   private _historyData: BucketData[] = [];
   private _lastHistoryFetch: number = 0;
   private _avgDeg?: number;
-  private _instDeg?: number;
   private _currentSpeed?: number;
   private _currentUnit: string = '';
   private _maxSpeed: number = 30;
@@ -279,7 +277,6 @@ class WindCompassCard extends HTMLElement {
 
     if (dirState) {
       this._avgDeg = parseFloat(dirState.state);
-      this._instDeg = parseFloat(dirState.state);
     }
 
     if (speedState) {
@@ -441,7 +438,6 @@ class WindCompassCard extends HTMLElement {
   private _updateDisplay() {
     if (!this.shadowRoot) return;
 
-    const marker = this.shadowRoot.querySelector('#marker') as HTMLElement;
     const tape = this.shadowRoot.querySelector('#tape') as HTMLElement;
 
     if (this._avgDeg !== undefined && this._pxPerDeg && tape) {
