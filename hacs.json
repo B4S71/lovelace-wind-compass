@@ -1,5 +1,5 @@
 {
   "name": "Wind Compass Card",
   "render_readme": true,
-  "filename": "wind-compass-card.js"
+  "filename": "dist/wind-compass-card.js"
 }

@@ -1,0 +1,31 @@
+{
+  "name": "lovelace-wind-compass-card",
+  "version": "0.1.0",
+  "description": "A professional wind rose compass for Home Assistant",
+  "main": "dist/wind-compass-card.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c --watch",
+    "lint": "eslint src/**/*.ts"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "wind",
+    "compass"
+  ],
+  "author": "B4S71",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "rollup": "^4.9.6",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
+  }
+}

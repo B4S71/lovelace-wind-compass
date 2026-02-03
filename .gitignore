@@ -21,8 +21,7 @@ yarn-error.log*
 pnpm-debug.log*
 package-lock.json.*.tmp
 
-# Build / output
-dist/
+# Build / output (keep dist/ for distribution)
 build/
 out/
 public/build/
@@ -34,6 +33,7 @@ public/build/
 coverage/
 reports/
 *.tgz
+*.tsbuildinfo
 
 # Environment files
 .env
