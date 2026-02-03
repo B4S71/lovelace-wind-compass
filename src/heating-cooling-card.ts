@@ -331,6 +331,7 @@ class HeatingCoolingCard extends HTMLElement {
           margin: 20px 0;
           border: 1px solid rgba(255,255,255,0.05);
           transition: background 0.3s;
+          z-index: 1; /* Create local stacking context to prevent pin from leaking over dialogs */
         }
 
         /* Off State: Grey Bar */
