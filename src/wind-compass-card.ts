@@ -141,7 +141,7 @@ class WindCompassCard extends HTMLElement {
           position: relative;
           width: 100%;
           height: 90px;
-          background: var(--secondary-background-color, rgba(128,128,128,0.05));
+          background: transparent;
           border-radius: 12px;
           
           /* Apple Fade-Out Effect Left/Right */
