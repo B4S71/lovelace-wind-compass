@@ -40,24 +40,51 @@ jobs:
       - name: Calculate next pre-release version
         id: version
         run: |
-          # Get the latest STABLE tag (not pre-release)
-          LATEST_TAG=$(git tag -l 'v*' --sort=-version:refname | grep -v -E 'alpha|beta' | head -1 2>/dev/null || echo "v0.0.0")
-          echo "Latest stable tag: $LATEST_TAG"
+          # Get ALL tags sorted by version
+          ALL_TAGS=$(git tag -l 'v*' --sort=-version:refname 2>/dev/null)
+          echo "All tags: $ALL_TAGS"
           
-          # Extract base version (e.g., v0.2.0 from v0.2.0)
-          if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+          # Get the absolute latest tag (could be any type)
+          LATEST_TAG=$(echo "$ALL_TAGS" | head -1)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          
+          echo "Latest tag: $LATEST_TAG"
+          
+          # Extract version numbers from latest tag
+          if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-alpha\.([0-9]+))?(-beta\.([0-9]+))?$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
             PATCH="${BASH_REMATCH[3]}"
+            ALPHA_NUM="${BASH_REMATCH[5]}"
+            BETA_NUM="${BASH_REMATCH[7]}"
           else
             MAJOR=0
-            MINOR=1
+            MINOR=0
             PATCH=0
+            ALPHA_NUM=""
+            BETA_NUM=""
           fi
           
-          # Start new alpha cycle with incremented patch
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}-alpha.1"
+          # Determine next version
+          if [[ "$LATEST_TAG" =~ -alpha\.([0-9]+)$ ]]; then
+            # Last tag was alpha - increment alpha number
+            NEXT_ALPHA=$((ALPHA_NUM + 1))
+            NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}-alpha.${NEXT_ALPHA}"
+            echo "Latest was alpha, incrementing alpha number: $NEW_VERSION"
+          elif [[ "$LATEST_TAG" =~ -beta\.([0-9]+)$ ]]; then
+            # Last tag was beta - increment beta number
+            NEXT_BETA=$((BETA_NUM + 1))
+            NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}-beta.${NEXT_BETA}"
+            echo "Latest was beta, incrementing beta number: $NEW_VERSION"
+          else
+            # Last tag was stable release - start new alpha cycle
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}-alpha.1"
+            echo "Latest was stable, starting new alpha cycle: $NEW_VERSION"
+          fi
           
           echo "New version: $NEW_VERSION"
           echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
