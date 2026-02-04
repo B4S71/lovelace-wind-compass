@@ -14,8 +14,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
-      // terser removed for debugging
+      }),
+      terser()
     ]
   },
   {
@@ -29,7 +29,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
+      }),
+      terser()
     ]
   },
   {
@@ -43,7 +44,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
+      }),
+      terser()
     ]
   },
   {
@@ -57,7 +59,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
+      }),
+      terser()
     ]
   },
   {
@@ -71,7 +74,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
+      }),
+      terser()
     ]
   },
   {
@@ -85,7 +89,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
+      }),
+      terser()
     ]
   },
   {
@@ -99,7 +104,8 @@ export default [
       resolve(),
       typescript({
         tsconfig: './tsconfig.json'
-      })
+      }),
+      terser()
     ]
   }
 ];
