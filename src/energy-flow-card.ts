@@ -75,7 +75,7 @@ export class EnergyFlowCard extends LitElement {
 
     // --- FETCH DATA ---
     const _hass = this.hass; // Use local ref to avoid repeated check issues if type allows or just use directly
-    let solar = _hass ? this._getState(this.config.solar_entity) : 0;
+    const solar = _hass ? this._getState(this.config.solar_entity) : 0;
     
     // Grid Logic: Combined or Split
     let grid = 0;

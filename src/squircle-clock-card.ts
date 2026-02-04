@@ -3,7 +3,7 @@
  * @version 0.1.0
  */
 
-import { LitElement, html, css } from 'lit';
+import { LitElement, html } from 'lit';
 import type {
   HomeAssistant,
   SquircleClockCardConfig,
