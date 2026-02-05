@@ -195,16 +195,9 @@ export class EnergyFlowCard extends LitElement {
     }
 
     // Icons
-    const iconSolar = html`<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3.55,19L2,14H9.17L12,19H3.55M19.55,14L22,19H14.83L12,14H19.55M11.5,6L8.5,11H15.5L12.5,6H11.5M10.83,4L7,11H3L8,4H10.83M13.17,4H16L21,11H17L13.17,4Z"/></svg>`; // mdi-solar-power-variant
-    
-    // mdi-transmission-tower (Base)
-    const iconGridPathBase = "M8 2L6 5V8H7L6 10H4L3 12H1V14H6L7 16H8V22H10V16H11L12 14H17V12H16L15 10H13L12 8H13V5L11 2H8M11 14H8L7 12H12L11 14M11 10H8L7 8H12L11 10Z";
-    const iconGridPath = iconGridPathBase;
-    
-    // Logic for Import/Export Icon variants can go here (using base for both now)
-    
-    const iconGrid = html`<svg viewBox="0 0 24 24"><path fill="currentColor" d="${iconGridPath}"/></svg>`; 
-    const iconHome = html`<svg viewBox="0 0 24 24"><path fill="currentColor" d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/></svg>`; // Home
+    const iconSolar = html`<ha-icon icon="mdi:solar-power-variant"></ha-icon>`;
+    const iconGrid = html`<ha-icon icon="mdi:transmission-tower"></ha-icon>`;
+    const iconHome = html`<ha-icon icon="mdi:home"></ha-icon>`;
     
     // --- RESPONSIVE MODES ---
     // Tiny: H < 120 OR W < 200 (Minimal content)
@@ -213,15 +206,21 @@ export class EnergyFlowCard extends LitElement {
     const isSmall = this._height > 0 && !isTiny && this._height < 210;
 
     // Battery Icon Logic
-    let iconBattPath = "M16 20H8V6H16M16.67 4H15V2H9V4H7.33C6.6 4 6 4.6 6 5.33V20.67C6 21.4 6.6 22 7.33 22H16.67C17.4 22 18 21.4 18 20.67V5.33C18 4.6 17.4 4 16.67 4Z"; // Default Battery
+    let iconBattName = "mdi:battery"; // Default
+    
+    // Calculate 10% steps for default state
+    const socRound = Math.round(soc / 10) * 10;
+    if (socRound <= 0) iconBattName = "mdi:battery-outline";
+    else if (socRound >= 100) iconBattName = "mdi:battery";
+    else iconBattName = `mdi:battery-${socRound}`;
+
     if (isCharging) {
-        // mdi-battery-arrow-up (Charging - Increasing)
-        iconBattPath = "M16.67 4H15V2H9V4H7.33C6.6 4 6 4.6 6 5.33V20.67C6 21.4 6.6 22 7.33 22H16.67C17.4 22 18 21.4 18 20.67V5.33C18 4.6 17.4 4 16.67 4M12 9L16 13H13V18H11V13H8L12 9Z";
+        iconBattName = "mdi:battery-arrow-up";
     } else if (isDischarging) {
-        // mdi-battery-arrow-down (Discharging - Decreasing)
-        iconBattPath = "M16.67 4H15V2H9V4H7.33C6.6 4 6 4.6 6 5.33V20.67C6 21.4 6.6 22 7.33 22H16.67C17.4 22 18 21.4 18 20.67V5.33C18 4.6 17.4 4 16.67 4M12 18L8 14H11V9H13V14H16L12 18Z";
+        iconBattName = "mdi:battery-arrow-down";
     }
-    const iconBatt = html`<svg viewBox="0 0 24 24"><path fill="currentColor" d="${iconBattPath}"/></svg>`;
+    
+    const iconBatt = html`<ha-icon icon="${iconBattName}"></ha-icon>`;
 
     return html`
       <ha-card class="${isTiny ? 'tiny' : ''} ${isSmall ? 'small' : ''}">
