@@ -30,6 +30,11 @@ export declare class EnergyFlowCard extends LitElement {
     private _cachedGradients;
     private _activeIndex;
     private _displayedGradient;
+    private _resizeObserver?;
+    private _width;
+    private _height;
+    connectedCallback(): void;
+    disconnectedCallback(): void;
     private _getState;
     private _formatPower;
     render(): import("lit-html").TemplateResult<1>;

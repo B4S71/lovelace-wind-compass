@@ -10,6 +10,9 @@ import './squircle-clock-card';
 import './simple-climate-card';
 import './energy-flow-card';
 import './person-card';
+import './vacuum-card';
+import './mower-card';
+import './notification-badge-card';
 
 console.info(
   '%c Lovelace Slick Screen Cards Loaded (v0.1.1) ',

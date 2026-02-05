@@ -42,7 +42,6 @@ export class PersonCard extends LitElement {
     return {
       type: "custom:slick-person-card",
       people: people,
-      size: 100,
       layout: "wrap"
     };
   }
@@ -52,8 +51,7 @@ export class PersonCard extends LitElement {
   }
 
   getCardSize() {
-    if (!this.config || !this.config.people) return 1;
-    return Math.ceil(this.config.people.length / 4);
+    return 1;
   }
 
   setConfig(config: PersonCardConfig) {
@@ -61,7 +59,6 @@ export class PersonCard extends LitElement {
 
     // Treat config as immutable: create a copy
     const newConfig = { 
-        size: 100, 
         layout: "wrap",
         ...config 
     };
@@ -72,24 +69,9 @@ export class PersonCard extends LitElement {
     }
     
     // Validation
-    if (newConfig.size && typeof newConfig.size !== 'number') throw new Error("size must be a number");
     if (newConfig.layout && !['wrap', 'horizontal'].includes(newConfig.layout)) throw new Error("layout must be wrap or horizontal");
     
     this.config = newConfig as PersonCardConfig;
-  }
-
-  private _formatDuration(lastChanged: string): string {
-    const start = new Date(lastChanged).getTime();
-    const now = Date.now();
-    const diff = Math.floor((now - start) / 1000); // seconds
-
-    if (diff < 60) return `${diff}s`;
-    const minutes = Math.floor(diff / 60);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `${days}d`;
   }
 
   render() {
@@ -101,9 +83,8 @@ export class PersonCard extends LitElement {
         return html`<ha-card style="padding: 10px;">Loading persons...</ha-card>`;
     }
 
-    const size = this.config.size || 100;
+    const size = 38;
     const isHorizontal = this.config.layout === 'horizontal';
-    const showInfo = size >= 50;
     
     // Ensure people list exists
     const people = this.config.people || [];
@@ -111,7 +92,7 @@ export class PersonCard extends LitElement {
     const cardStyle = `
       width: ${size}px;
       height: ${size}px;
-      font-size: ${size / 100}em;
+      border-radius: 50%;
     `;
 
     return html`
@@ -126,17 +107,10 @@ export class PersonCard extends LitElement {
 
           const isHome = entity.state === 'home';
           const entityPicture = entity.attributes.entity_picture;
-          const location = entity.state;
-          const duration = this._formatDuration(entity.last_changed);
 
           return html`
             <div class="person-card ${isHome ? 'home' : 'away'}" 
                  style="background-image: url('${entityPicture}'); ${cardStyle}">
-              ${showInfo ? html`
-              <div class="info">
-                <span class="location">${location}</span>
-                <span class="duration">${duration}</span>
-              </div>` : html``}
             </div>
           `;
         })}
@@ -146,14 +120,19 @@ export class PersonCard extends LitElement {
 
   static styles = css`
     :host {
-      display: inline-flex;
-      vertical-align: top;
+      display: block;
+      height: 100%;
     }
     .person-container {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       justify-content: flex-start;
+      height: 100%;
+      box-sizing: border-box;
+      align-content: flex-start;
+      margin-right: 12px;
+      margin-bottom: 12px;
     }
     .person-container.horizontal {
       flex-wrap: nowrap;
@@ -183,38 +162,6 @@ export class PersonCard extends LitElement {
     }
     .person-card.home {
       filter: grayscale(0%);
-    }
-    
-    .info {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      padding: 4px;
-      box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.4);
-      color: white;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(2px);
-    }
-
-    .location {
-      font-size: 0.8em;
-      font-weight: bold;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      text-transform: capitalize;
-    }
-
-    .duration {
-      font-size: 0.7em;
-      opacity: 0.9;
     }
   `;
 }
@@ -284,17 +231,6 @@ class PersonCardEditor extends LitElement {
         }
       },
       {
-        name: "size",
-        label: "Card Size (px)",
-        selector: {
-          number: {
-            min: 50,
-            max: 200,
-            mode: "slider"
-          }
-        }
-      },
-      {
         name: "layout",
         label: "Layout",
         selector: {
@@ -330,5 +266,13 @@ window.customCards.push({
   type: "slick-person-card",
   name: "Slick Person",
   preview: true,
-  description: "A squircle person card with status overlay."
+  description: "A round person badge/card."
+});
+
+window.customBadges = window.customBadges || [];
+window.customBadges.push({
+  type: "custom:slick-person-card",
+  name: "Slick Person Badge",
+  description: "A round person badge.",
+  preview: true
 });

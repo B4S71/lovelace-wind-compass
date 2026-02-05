@@ -19,11 +19,20 @@ export interface HomeAssistant {
   resources: any;
   themes: any;
   user: any;
+  areas: Record<string, any>;
+  devices: Record<string, any>;
+  entities: Record<string, any>;
 }
 
 declare global {
   interface Window {
     customCards: Array<{
+      type: string;
+      name: string;
+      description: string;
+      preview?: boolean;
+    }>;
+    customBadges: Array<{
       type: string;
       name: string;
       description: string;
@@ -148,5 +157,52 @@ export interface PersonCardConfig extends LovelaceCardConfig {
   people?: string[];
   entity?: string;
   layout?: 'wrap' | 'horizontal';
-  size?: number;
 }
+
+// Vacuum Card Types
+export interface VacuumCardConfig extends LovelaceCardConfig {
+  type: 'custom:slick-vacuum-card';
+  entity: string;
+  start_button_entity?: string;
+  automation_entity?: string;
+  schedule_time_entity?: string;
+}
+
+// Mower Card Types
+export interface MowerCardConfig extends LovelaceCardConfig {
+  type: 'custom:slick-mower-card';
+  entity: string;
+  start_button_entity?: string;
+  automation_entity?: string;
+  schedule_time_entity?: string;
+}
+
+// Notification Badge Card Types
+export interface CalendarRule {
+  pattern: string;
+  color: string;
+}
+
+export interface CalendarBadgeConfig {
+  entity: string;
+  icon?: string;
+  days?: number; // Days lookahead (default 7)
+  color?: string; // Default color
+  rules?: CalendarRule[]; // Color rules based on content
+}
+
+export interface EntityBadgeConfig {
+  entity: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface NotificationBadgeCardConfig extends LovelaceCardConfig {
+  type: 'custom:slick-notification-badge-card';
+  calendars?: CalendarBadgeConfig[];
+  entities?: EntityBadgeConfig[];
+}
+
+
+
+

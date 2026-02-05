@@ -107,5 +107,52 @@ export default [
       }),
       terser()
     ]
+  },
+  {
+    input: 'src/vacuum-card.ts',
+    output: {
+      file: 'dist/vacuum-card.js',
+      format: 'es',
+      sourcemap: true
+    },
+    plugins: [
+      resolve(),
+      typescript({
+        tsconfig: './tsconfig.json'
+      }),
+      terser()
+    ]
+  },
+  {
+    input: 'src/mower-card.ts',
+    output: {
+      file: 'dist/mower-card.js',
+      format: 'es',
+      sourcemap: true
+    },
+    plugins: [
+      resolve(),
+      typescript({
+        tsconfig: './tsconfig.json'
+      }),
+      terser()
+    ]
+  },
+  {
+    input: 'src/notification-badge-card.ts',
+    output: {
+      file: 'dist/notification-badge-card.js',
+      format: 'es',
+      sourcemap: true
+    },
+    plugins: [
+      resolve(),
+      typescript({
+        tsconfig: './tsconfig.json'
+      }),
+      terser()
+    ]
   }
 ];
+
+

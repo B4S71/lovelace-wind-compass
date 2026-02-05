@@ -19,13 +19,11 @@ export declare class PersonCard extends LitElement {
     static getStubConfig(hass: HomeAssistant): {
         type: string;
         people: string[];
-        size: number;
         layout: string;
     };
     constructor();
     getCardSize(): number;
     setConfig(config: PersonCardConfig): void;
-    private _formatDuration;
     render(): import("lit-html").TemplateResult<1>;
     static styles: import("lit").CSSResult;
 }
