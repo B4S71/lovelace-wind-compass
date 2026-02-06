@@ -28,6 +28,9 @@ export class LightControlCard extends LitElement {
 
   // Internal state
   _interacting = false;
+  private _pointerStartTime = 0;
+  private _pointerStartX = 0;
+  private _pointerStartY = 0;
 
   static getConfigElement() {
     return document.createElement("slick-light-control-card-editor");
@@ -94,6 +97,10 @@ export class LightControlCard extends LitElement {
     }
     
     this._interacting = true;
+    this._pointerStartTime = Date.now();
+    this._pointerStartX = e.clientX;
+    this._pointerStartY = e.clientY;
+
     const card = this.shadowRoot?.querySelector('ha-card');
     if (card) {
       card.setPointerCapture(e.pointerId);
@@ -107,7 +114,21 @@ export class LightControlCard extends LitElement {
     const card = this.shadowRoot?.querySelector('ha-card');
     if (card) {
       card.releasePointerCapture(e.pointerId);
-      this._applyLightState(e, card);
+
+      // Check for tap vs drag
+      const duration = Date.now() - this._pointerStartTime;
+      const dist = Math.sqrt(
+        Math.pow(e.clientX - this._pointerStartX, 2) + 
+        Math.pow(e.clientY - this._pointerStartY, 2)
+      );
+
+      // If short tap and little movement -> Toggle
+      if (duration < 250 && dist < 10) {
+        this._toggleLight();
+      } else {
+        // Else -> Apply brightness/temp
+        this._applyLightState(e, card);
+      }
     }
   }
 

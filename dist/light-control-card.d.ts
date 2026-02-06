@@ -19,6 +19,9 @@ export declare class LightControlCard extends LitElement {
         };
     };
     _interacting: boolean;
+    private _pointerStartTime;
+    private _pointerStartX;
+    private _pointerStartY;
     static getConfigElement(): HTMLElement;
     static getStubConfig(): {
         type: string;
