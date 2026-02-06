@@ -19,10 +19,9 @@ export declare class LightControlCard extends LitElement {
         };
     };
     _interacting: boolean;
-    _interactionMode: 'light' | 'cover';
-    _interactState: {
-        main: string;
-        secondary?: string;
+    _activeSlider: {
+        entityId: string;
+        type: 'position' | 'tilt';
     } | null;
     private _pointerStartTime;
     private _pointerStartX;
@@ -37,11 +36,12 @@ export declare class LightControlCard extends LitElement {
     setConfig(config: LightControlCardConfig): void;
     shouldUpdate(changedProps: PropertyValues): boolean;
     private _toggleLight;
-    private _controlCover;
     private _handlePointerDown;
     private _handlePointerUp;
     private _handlePointerMove;
-    private _applyCoverState;
+    private _handleSliderDown;
+    private _handleSliderMove;
+    private _processSliderMove;
     private _applyLightState;
     render(): import("lit-html").TemplateResult<1>;
     private _renderCover;
