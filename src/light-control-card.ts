@@ -40,6 +40,26 @@ export class LightControlCard extends LitElement {
   private _longPressTimer: number | null = null;
   private _pendingPointerId: number | null = null;
 
+  protected firstUpdated(_changedProperties: PropertyValues): void {
+      super.firstUpdated(_changedProperties);
+      // We must use a passive: false listener to be able to preventDefault() on touchmove
+      // This is the only reliable way to stop scrolling on mobile devices while dragging
+      const card = this.shadowRoot?.querySelector('ha-card');
+      if (card) {
+          card.addEventListener('touchmove', this._handleTouchMove, { passive: false });
+      }
+  }
+
+  private _handleTouchMove = (e: Event) => {
+      // If we are currently interacting (long-press active) or dragging a slider
+      if (this._interacting || this._activeSlider) {
+          // Forcefully prevent scrolling
+          if (e.cancelable) {
+              e.preventDefault();
+          }
+      }
+  }
+
   static getConfigElement() {
     return document.createElement("slick-light-control-card-editor");
   }
@@ -116,17 +136,12 @@ export class LightControlCard extends LitElement {
      // Haptic feedback
      if (navigator.vibrate) navigator.vibrate(50);
      
-     const card = this.shadowRoot?.querySelector('ha-card') as HTMLElement;
-     if (card) {
-         // Lock interaction immediately to prevent scrolling
-         card.style.touchAction = 'none';
-         
-         if (this._pendingPointerId !== null) {
-             try {
-                 card.setPointerCapture(this._pendingPointerId);
-             } catch (e) {
-                 // Ignore capture errors
-             }
+     const card = this.shadowRoot?.querySelector('ha-card');
+     if (card && this._pendingPointerId !== null) {
+         try {
+             card.setPointerCapture(this._pendingPointerId);
+         } catch (e) {
+             // Ignore capture errors
          }
      }
   }
@@ -171,16 +186,11 @@ export class LightControlCard extends LitElement {
         return;
     }
 
-    // Reset touch action
-    const card = this.shadowRoot?.querySelector('ha-card') as HTMLElement;
-    if (card) {
-        card.style.touchAction = '';
-    }
-
     if (!this._interacting) return;
     this._interacting = false;
     this._pendingPointerId = null;
     
+    const card = this.shadowRoot?.querySelector('ha-card');
     if (card) {
       if (card.releasePointerCapture) {
           try {
