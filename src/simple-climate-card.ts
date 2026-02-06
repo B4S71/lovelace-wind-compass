@@ -353,16 +353,18 @@ export class SimpleClimateCard extends LitElement {
       }
       
       .temp-big {
-        font-size: clamp(1.8rem, 8cqi, 3.5rem);
-        font-weight: 200;
+        font-size: clamp(2rem, 10cqi, 4rem);
+        font-weight: 100;
         line-height: 1;
         text-shadow: 0 1px 4px rgba(0,0,0,0.3);
         white-space: nowrap;
+        letter-spacing: -1px;
       }
       .temp-big .unit {
-        font-size: clamp(1rem, 4cqi, 2rem);
+        font-size: clamp(1rem, 4cqi, 2.2rem);
         vertical-align: top;
         opacity: 0.8;
+        font-weight: 200;
       }
       
       .header-right {
@@ -373,13 +375,13 @@ export class SimpleClimateCard extends LitElement {
         flex: 0 0 auto;
       }
       .main-icon {
-        --mdc-icon-size: clamp(20px, 6cqi, 32px);
+        --mdc-icon-size: clamp(22px, 7cqi, 36px);
         filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
         margin-bottom: 4px;
       }
       .state-label {
-        font-size: clamp(0.65rem, 2.5cqi, 0.9rem);
-        font-weight: 500;
+        font-size: clamp(0.7rem, 3cqi, 1rem);
+        font-weight: 300;
         opacity: 0.9;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
       }
@@ -398,8 +400,8 @@ export class SimpleClimateCard extends LitElement {
       }
       
       .name {
-        font-size: clamp(0.75rem, 3cqi, 1rem);
-        font-weight: 600;
+        font-size: clamp(0.8rem, 3.5cqi, 1.1rem);
+        font-weight: 500;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         opacity: 0.9;
         white-space: nowrap;
@@ -428,7 +430,7 @@ export class SimpleClimateCard extends LitElement {
       }
       .target-val {
         font-size: 1.1rem;
-        font-weight: 600;
+        font-weight: 400;
       }
       .divider {
         width: 1px;
@@ -437,7 +439,7 @@ export class SimpleClimateCard extends LitElement {
         margin: 0 10px;
       }
       .target-chip {
-        font-weight: 600;
+        font-weight: 400;
         font-size: 0.9rem;
       }
     `;

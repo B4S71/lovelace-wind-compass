@@ -266,8 +266,8 @@ const $=globalThis,x=t=>t,w=$.trustedTypes,S=w?w.createPolicy("lit-html",{create
     }
 
     .status {
-      font-size: 1.2rem;
-      font-weight: 500;
+      font-size: 1.3rem;
+      font-weight: 300;
       line-height: 1.4;
       white-space: nowrap; 
       overflow: hidden; 
@@ -276,7 +276,7 @@ const $=globalThis,x=t=>t,w=$.trustedTypes,S=w?w.createPolicy("lit-html",{create
 
     .room {
       font-size: 1rem;
-      font-weight: 500;
+      font-weight: 300;
       opacity: 0.9;
       line-height: 1.2;
       white-space: nowrap; 
@@ -387,7 +387,7 @@ const $=globalThis,x=t=>t,w=$.trustedTypes,S=w?w.createPolicy("lit-html",{create
         text-align: center;
         color: var(--secondary-text-color);
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 300;
         letter-spacing: 0.5px;
         pointer-events: none;
         user-select: none;
@@ -500,7 +500,7 @@ const $=globalThis,x=t=>t,w=$.trustedTypes,S=w?w.createPolicy("lit-html",{create
         display: flex;
         align-items: center;
         font-size: 1.1rem;
-        font-weight: 600;
+        font-weight: 400;
         line-height: 1;
     }
 

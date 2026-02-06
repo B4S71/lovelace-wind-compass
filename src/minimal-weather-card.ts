@@ -399,7 +399,7 @@ export class MiniWeatherCard extends LitElement {
         if (sensorState && !isNaN(parseFloat(sensorState.state))) currentTemp = sensorState.state;
     }
 
-    const FIXED_HEIGHT = 162; const ROW_HEIGHT = 32;
+    const FIXED_HEIGHT = 110; const ROW_HEIGHT = 28;
     let maxRows = Math.floor((this._cardHeight - FIXED_HEIGHT) / ROW_HEIGHT);
     if (maxRows < 0) maxRows = 0;
     const showForecast = this._cardHeight > 140;
@@ -535,22 +535,22 @@ export class MiniWeatherCard extends LitElement {
       .content-layer { position: relative; z-index: 4; }
       .container { padding: clamp(8px, 3cqi, 16px); height: 100%; display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; overflow: hidden; }
       .header { display: flex; justify-content: space-between; align-items: flex-start; flex: 0 0 auto; margin-bottom: clamp(4px, 2cqi, 10px); }
-      .temp-big { font-size: clamp(1.8rem, 8cqi, 3.5rem); font-weight: 200; line-height: 1; text-shadow: 0 1px 5px rgba(0,0,0,0.5); white-space: nowrap; }
+      .temp-big { font-size: clamp(2rem, 10cqi, 4rem); font-weight: 100; line-height: 1; text-shadow: 0 1px 5px rgba(0,0,0,0.5); white-space: nowrap; letter-spacing: -1px; }
       .header-right { display: flex; flex-direction: column; align-items: flex-end; text-shadow: 0 1px 5px rgba(0,0,0,0.5); }
-      .main-icon { --mdc-icon-size: clamp(20px, 6cqi, 32px); margin-bottom: 4px; filter: drop-shadow(0 1px 5px rgba(0,0,0,0.5)); }
-      .hl-label { font-size: clamp(0.7rem, 2.5cqi, 0.9rem); font-weight: 500; opacity: 0.9; white-space: nowrap; }
+      .main-icon { --mdc-icon-size: clamp(22px, 7cqi, 36px); margin-bottom: 4px; filter: drop-shadow(0 1px 5px rgba(0,0,0,0.5)); }
+      .hl-label { font-size: clamp(0.75rem, 3cqi, 1rem); font-weight: 300; opacity: 0.9; white-space: nowrap; }
       .forecast-list { display: flex; flex-direction: column; gap: 0; flex: 1 1 auto; overflow: hidden; justify-content: flex-start; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-      .row { display: grid; grid-template-columns: 50px 30px 1fr; align-items: center; font-size: 0.95rem; height: 32px; }
-      .day-name { font-weight: 600; opacity: 0.9; }
+      .row { display: grid; grid-template-columns: 50px 30px 1fr; align-items: center; font-size: 1rem; height: 28px; }
+      .day-name { font-weight: 400; opacity: 0.9; }
       .icon-small { text-align: center; }
       .icon-small ha-icon { --mdc-icon-size: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)); }
       .bars { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
       .val-low { opacity: 0.6; width: 25px; text-align: right; }
-      .val-high { font-weight: 600; width: 25px; text-align: right; }
+      .val-high { font-weight: 500; width: 25px; text-align: right; }
       .bar-track { flex-grow: 1; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; position: relative; min-width: 50px; max-width: 100px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); }
       .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; right: 0; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); opacity: 0.8; }
-      .hourly .temp-single { text-align: right; font-weight: 600; padding-right: 5px; }
-      .footer { margin-top: auto; padding-top: 10px; text-align: center; font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; flex: 0 0 auto; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+      .hourly .temp-single { text-align: right; font-weight: 500; padding-right: 5px; }
+      .footer { margin-top: auto; padding-top: 6px; text-align: center; font-size: 0.75rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; flex: 0 0 auto; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 300; }
       .loading { text-align: center; font-size: 0.8rem; opacity: 0.5; padding: 10px; }
     `;
   }

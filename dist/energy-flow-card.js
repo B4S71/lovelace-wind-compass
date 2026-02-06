@@ -141,8 +141,8 @@ const x=globalThis,w=t=>t,A=x.trustedTypes,E=A?A.createPolicy("lit-html",{create
         flex: 0 0 auto;
       }
       .title {
-        font-size: clamp(0.85rem, 3cqi, 1.1rem);
-        font-weight: 600;
+        font-size: clamp(0.85rem, 3cqi, 1.2rem);
+        font-weight: 400;
         opacity: 0.9;
         text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         white-space: nowrap;
@@ -151,7 +151,7 @@ const x=globalThis,w=t=>t,A=x.trustedTypes,E=A?A.createPolicy("lit-html",{create
       }
       .status-badge {
         font-size: 0.8rem;
-        font-weight: 700;
+        font-weight: 500;
         text-transform: uppercase;
         padding: 2px 8px;
         background: rgba(255,255,255,0.2);
@@ -209,22 +209,22 @@ const x=globalThis,w=t=>t,A=x.trustedTypes,E=A?A.createPolicy("lit-html",{create
       .home-icon svg { width: 28px; height: 28px; }
 
       .stat-value {
-        font-size: clamp(0.8rem, 3cqi, 1.1rem);
-        font-weight: 600;
+        font-size: clamp(0.85rem, 3.5cqi, 1.2rem);
+        font-weight: 400;
         line-height: 1.1;
         text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         white-space: nowrap;
       }
       .stat-value.big {
-        font-size: clamp(1.2rem, 6cqi, 2.2rem);
-        font-weight: 700;
+        font-size: clamp(1.4rem, 7cqi, 2.5rem);
+        font-weight: 200;
         margin-bottom: 2px;
         letter-spacing: -0.5px;
       }
       
       .stat-label {
         font-size: 0.8rem;
-        font-weight: 500;
+        font-weight: 300;
         opacity: 0.8;
         margin-top: 4px;
       }
@@ -243,12 +243,12 @@ const x=globalThis,w=t=>t,A=x.trustedTypes,E=A?A.createPolicy("lit-html",{create
         gap: 8px;
         margin-bottom: 6px;
         font-size: 0.9rem;
-        font-weight: 600;
+        font-weight: 400;
       }
       .batt-icon svg { width: 16px; height: 16px; opacity: 0.8; }
       .batt-power {
         margin-left: auto;
-        font-weight: 400;
+        font-weight: 300;
         opacity: 0.8;
         font-size: 0.85rem;
       }
@@ -256,7 +256,7 @@ const x=globalThis,w=t=>t,A=x.trustedTypes,E=A?A.createPolicy("lit-html",{create
         font-size: 0.75rem;
         opacity: 0.6;
         text-transform: uppercase;
-        font-weight: 700;
+        font-weight: 500;
       }
 
       .batt-bar-bg {

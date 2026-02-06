@@ -111,7 +111,7 @@ const A=globalThis,v=t=>t,E=A.trustedTypes,w=E?E.createPolicy("lit-html",{create
         background: white;
         color: #333;
         font-size: 0.7rem;
-        font-weight: 900;
+        font-weight: 700;
         min-width: 16px;
         height: 16px;
         border-radius: 8px;

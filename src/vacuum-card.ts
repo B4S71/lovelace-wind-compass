@@ -816,8 +816,8 @@ export class VacuumCard extends LitElement {
     }
 
     .status {
-      font-size: 1.2rem;
-      font-weight: 500;
+      font-size: 1.3rem;
+      font-weight: 300;
       line-height: 1.4;
       white-space: nowrap; 
       overflow: hidden; 
@@ -826,7 +826,7 @@ export class VacuumCard extends LitElement {
 
     .room {
       font-size: 1rem;
-      font-weight: 500;
+      font-weight: 300;
       opacity: 0.9;
       line-height: 1.2;
       white-space: nowrap; 
@@ -937,7 +937,7 @@ export class VacuumCard extends LitElement {
         text-align: center;
         color: var(--secondary-text-color);
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 300;
         letter-spacing: 0.5px;
         pointer-events: none;
         user-select: none;
@@ -1050,7 +1050,7 @@ export class VacuumCard extends LitElement {
         display: flex;
         align-items: center;
         font-size: 1.1rem;
-        font-weight: 600;
+        font-weight: 400;
         line-height: 1;
     }
 

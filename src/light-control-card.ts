@@ -822,7 +822,7 @@ export class LightControlCard extends LitElement {
         min-width: 0; /* Allow text truncation */
       }
       .name {
-        font-weight: 600;
+        font-weight: 400;
         font-size: 1.1rem;
         white-space: nowrap;
         overflow: hidden;
@@ -931,7 +931,7 @@ export class LightControlCard extends LitElement {
         left: 0; right: 0;
         text-align: center;
         font-size: 0.75rem;
-        font-weight: 600;
+        font-weight: 400;
         color: rgba(255, 255, 255, 0.8);
         pointer-events: none;
         z-index: 3;
