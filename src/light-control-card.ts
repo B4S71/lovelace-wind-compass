@@ -593,7 +593,7 @@ export class LightControlCard extends LitElement {
         flex-direction: column;
         box-sizing: border-box;
         height: 100%; /* Always fill the host container */
-        justify-content: center; /* Center content vertically */
+        /* Center removed to allow top alignment */
       }
       
       /* Layout sizing - Remove fixed heights/auto that prevent filling */
@@ -653,7 +653,7 @@ export class LightControlCard extends LitElement {
         display: flex;
         align-items: center;
         gap: 16px;
-        flex: 1; /* Take remaining space so covers stay at bottom */
+        flex: 0 0 auto; /* Do not grow, stay compact */
       }
       /* In medium layout, header doesn't need to flex-grow heavily if side-by-side */
       .layout-container.medium .header {
