@@ -46,6 +46,7 @@ export class LightControlCard extends LitElement {
   private _pointerStartX = 0;
   private _pointerStartY = 0;
   private _longPressTimer: number | null = null;
+  private _clickTimer: number | null = null;
   private _pendingPointerId: number | null = null;
 
   connectedCallback() {
@@ -178,6 +179,11 @@ export class LightControlCard extends LitElement {
     const now = Date.now();
     if (now - this._lastClick < 300) {
         // Double Tap
+        if (this._clickTimer) {
+            clearTimeout(this._clickTimer);
+            this._clickTimer = null;
+        }
+
         if (this._layout === 'compact' && this.config.covers && this.config.covers.length > 0) {
              this._openMoreInfo(this.config.covers[0]);
              // Cancel interaction/long-press
@@ -274,8 +280,13 @@ export class LightControlCard extends LitElement {
         this._longPressTimer = null;
         
         // If it was a clean tap (pointerup, not cancel), toggle
+        // Use logic to wait for potential double click
         if (e.type === 'pointerup') {
-             this._toggleLight();
+             if (this._clickTimer) clearTimeout(this._clickTimer);
+             this._clickTimer = window.setTimeout(() => {
+                 this._toggleLight();
+                 this._clickTimer = null;
+             }, 250);
         }
         this._pendingPointerId = null;
         return;
@@ -674,12 +685,16 @@ export class LightControlCard extends LitElement {
         display: flex;
         flex-direction: column;
         height: 100%;
-        justify-content: space-between;
+        justify-content: flex-start; /* Default: packed at top */
         gap: 8px;
         pointer-events: none; /* Allow events to pass through wrapper, but children re-enable if needed */
         flex: 1;
         min-height: 0; /* Allow shrinking */
       }
+      .large .content {
+          justify-content: space-between; /* 3+ rows (large): spread out */
+      }
+
       .layout-container.medium .content {
           flex-direction: row;
           gap: 12px;
