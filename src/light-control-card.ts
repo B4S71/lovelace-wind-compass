@@ -29,7 +29,7 @@ export class LightControlCard extends LitElement {
   // Internal state
   _interacting = false;
   _interactionMode: 'light' | 'cover' = 'light';
-  _interactState: string = '';
+  _interactState: { main: string; secondary?: string } | null = null;
   private _pointerStartTime = 0;
   private _pointerStartX = 0;
   private _pointerStartY = 0;
@@ -162,7 +162,7 @@ export class LightControlCard extends LitElement {
 
         if (this._interactionMode === 'light') {
             const brightness = Math.round((1 - y) * 100);
-            this._interactState = `Target Brightness: ${brightness}%`;
+            this._interactState = { main: `Brightness: ${brightness}%` };
         } else {
             let positionText = '';
             // Match deadzones in _applyCoverState (0.1 and 0.9)
@@ -175,11 +175,13 @@ export class LightControlCard extends LitElement {
                 positionText = `${p}%`;
             }
 
-            this._interactState = `Target: ${positionText}`;
-            
             // Optional: Tilt
             const tilt = Math.round((1 - y) * 100);
-            this._interactState += ` | Tilt: ${tilt}%`;
+            
+            this._interactState = { 
+                main: `Position: ${positionText}`,
+                secondary: `Tilt: ${tilt}%`
+            };
         }
     }
   }
@@ -272,27 +274,40 @@ export class LightControlCard extends LitElement {
     if (this._interacting) {
       if (this._interactionMode === 'cover') {
            // Cover Gradient: Left (Bright/Open) -> Right (Dark/Close)
-           // Pattern: Clear at top (transparent), thicker stripes at bottom
+           // Variable thickness stripes: High frequency
+           // Base lines every 3%
            
-           // Variable thickness stripes:
-           // 25%: 1px line
-           // 50%: 2px line
-           // 70%: 4px line
-           // 85%: 6px line
-           // 95%: 8px line
+           
            const stripes = `linear-gradient(to bottom, 
             transparent 0%, 
-            transparent 25%, rgba(0,0,0,0.15) 25%, rgba(0,0,0,0.15) 26%, transparent 26%,
-            transparent 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2) 52%, transparent 52%,
-            transparent 70%, rgba(0,0,0,0.25) 70%, rgba(0,0,0,0.25) 73%, transparent 73%,
-            transparent 85%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0.3) 89%, transparent 89%,
-            transparent 95%, rgba(0,0,0,0.35) 95%, rgba(0,0,0,0.35) 100%
+            rgba(0,0,0,0.1) 4%, transparent 4%,
+            transparent 8%, 
+            rgba(0,0,0,0.15) 12%, transparent 12%,
+            transparent 15%,
+            rgba(0,0,0,0.2) 19%, transparent 19%,
+            transparent 22%,
+            rgba(0,0,0,0.2) 26%, transparent 26%,
+            transparent 29%,
+            rgba(0,0,0,0.25) 34%, transparent 34%,
+            transparent 37%,
+            rgba(0,0,0,0.25) 42%, transparent 42%,
+            transparent 45%,
+            rgba(0,0,0,0.3) 51%, transparent 51%,
+            transparent 54%,
+            rgba(0,0,0,0.3) 60%, transparent 60%,
+            transparent 63%,
+            rgba(0,0,0,0.35) 70%, transparent 70%,
+            transparent 73%,
+            rgba(0,0,0,0.35) 81%, transparent 81%,
+            transparent 84%,
+            rgba(0,0,0,0.4) 93%, transparent 93%,
+            transparent 96%,
+            rgba(0,0,0,0.4) 100%
            )`;
            
            const verticalFade = `linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(0,0,0,0.4) 100%)`;
            const baseGradient = `linear-gradient(to right, #87CEEB 0%, #333333 100%)`;
 
-           // Composition: Bottom layer is base, then stripes, then potential fade
            bgStyle = `background: ${verticalFade}, ${stripes}, ${baseGradient};`;
       } else {
            // 2D Map: X=Temp (Blue->Orange), Y=Bright (White->Black)
@@ -313,11 +328,8 @@ export class LightControlCard extends LitElement {
         }
     }
 
-    // Determine status text for bottom bar
-    let statusText = '';
-    if (this._interacting) {
-        statusText = this._interactState;
-    }
+    // Determine status text/badges
+    const showStatus = this._interacting && this._interactionMode === 'cover';
 
     return html`
       <ha-card 
@@ -347,10 +359,13 @@ export class LightControlCard extends LitElement {
             ` : ''}
         </div>
         
-        <!-- INTERACTION STATUS BAR -->
-        <div class="status-bar" style="opacity: ${this._interacting ? '1' : '0'}">
-            ${statusText}
+        <!-- INTERACTION STATUS BADGES -->
+        ${showStatus && this._interactState ? html`
+        <div class="status-container">
+            <div class="status-badge">${this._interactState.main}</div>
+            ${this._interactState.secondary ? html`<div class="status-badge">${this._interactState.secondary}</div>` : ''}
         </div>
+        ` : ''}
       </ha-card>
     `;
   }
@@ -487,20 +502,32 @@ export class LightControlCard extends LitElement {
         --mdc-icon-size: 20px;
       }
       
-      .status-bar {
+      .status-container {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          padding: 12px;
-          background: rgba(0,0,0,0.5);
-          color: white;
-          text-align: center;
-          font-weight: bold;
-          font-size: 1.1rem;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          align-items: flex-end;
           pointer-events: none;
-          transition: opacity 0.2s;
-          backdrop-filter: blur(4px);
+      }
+
+      .status-badge {
+          background: rgba(0,0,0,0.6);
+          color: white;
+          padding: 6px 10px;
+          border-radius: 8px;
+          backdrop-filter: blur(8px);
+          font-weight: 600;
+          font-size: 0.9rem;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      }
+
+      .header, .content {
+          text-shadow: 0 1px 3px rgba(0,0,0,0.6);
       }
     `;
   }
