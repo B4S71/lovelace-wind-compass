@@ -588,18 +588,30 @@ export class LightControlCard extends LitElement {
         user-select: none;
         position: relative;
         cursor: grab;
-        /* Ensure minimum height for controls */
-        /* min-height: 150px; Dynamic now */
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
       }
+      
+      /* Layout sizing */
       ha-card.compact {
-          min-height: 50px;
+          min-height: unset;
+          height: auto; 
           cursor: pointer;
       }
+      ha-card.medium {
+          min-height: unset;
+          height: auto;
+      }
+      
       ha-card.small {
-          min-height: 120px;
+          min-height: 150px;
+          height: auto;
+      }
+      
+      ha-card.large {
+          min-height: 200px;
+          height: auto;
       }
 
       .layout-container {
