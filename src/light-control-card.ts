@@ -23,12 +23,15 @@ export class LightControlCard extends LitElement {
       hass: { attribute: false },
       config: { state: true },
       _interacting: { state: true },
-      _cursorPos: { state: true }
+      _cursorPos: { state: true },
+      _layout: { state: true }
     };
   }
 
   // Internal state
   _interacting = false;
+  _layout: 'compact' | 'small' | 'medium' | 'large' = 'large';
+  _resizeObserver: ResizeObserver | null = null;
   _cursorPos = { x: 0, y: 0 };
   _activeSlider: { 
     entityId: string; 
@@ -41,6 +44,25 @@ export class LightControlCard extends LitElement {
   private _pointerStartY = 0;
   private _longPressTimer: number | null = null;
   private _pendingPointerId: number | null = null;
+
+  connectedCallback() {
+      super.connectedCallback();
+      this._resizeObserver = new ResizeObserver(entries => {
+          for (const entry of entries) {
+              const { width, height } = entry.contentRect;
+              this._updateLayout(width, height);
+          }
+      });
+      this._resizeObserver.observe(this);
+  }
+
+  disconnectedCallback() {
+      super.disconnectedCallback();
+      if (this._resizeObserver) {
+          this._resizeObserver.disconnect();
+          this._resizeObserver = null;
+      }
+  }
 
   protected firstUpdated(_changedProperties: PropertyValues): void {
       super.firstUpdated(_changedProperties);
@@ -59,6 +81,18 @@ export class LightControlCard extends LitElement {
           if (e.cancelable) {
               e.preventDefault();
           }
+      }
+  }
+
+  private _updateLayout(width: number, height: number) {
+      if (height < 100) {
+          this._layout = 'compact';
+      } else if (height < 200 && width >= 400) {
+          this._layout = 'medium';
+      } else if (height < 200) {
+          this._layout = 'small';
+      } else {
+          this._layout = 'large';
       }
   }
 
@@ -110,6 +144,8 @@ export class LightControlCard extends LitElement {
   }
 
 
+  private _lastClick = 0;
+
   private _handlePointerDown(e: PointerEvent) {
     // Ignore if clicking buttons or controls
     const path = e.composedPath();
@@ -121,6 +157,20 @@ export class LightControlCard extends LitElement {
       }
     }
     
+    // Check for double click/tap
+    const now = Date.now();
+    if (now - this._lastClick < 300) {
+        // Double Tap
+        if (this._layout === 'compact' && this.config.covers && this.config.covers.length > 0) {
+             this._openMoreInfo(this.config.covers[0]);
+             // Cancel interaction/long-press
+             if (this._longPressTimer) clearTimeout(this._longPressTimer);
+             this._pendingPointerId = null;
+             return;
+        }
+    }
+    this._lastClick = now;
+
     // Start long press detection
     this._pointerStartX = e.clientX;
     this._pointerStartY = e.clientY;
@@ -131,8 +181,25 @@ export class LightControlCard extends LitElement {
     }, 500);
   }
 
+  private _openMoreInfo(entityId: string) {
+      const event = new CustomEvent('hass-more-info', {
+        detail: { entityId },
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(event);
+  }
+
   private _startInteraction() {
      this._longPressTimer = null;
+
+     // Mode Check: 'compact' and 'small' DO NOT support 2D drag
+     // Instead, they open more-info
+     if (this._layout === 'compact' || this._layout === 'small') {
+         this._openMoreInfo(this.config.entity);
+         this._pendingPointerId = null;
+         return;
+     }
      
      const card = this.shadowRoot?.querySelector('ha-card');
      if (card) {
@@ -345,6 +412,15 @@ export class LightControlCard extends LitElement {
     this.hass.callService('light', 'turn_on', serviceData);
   }
 
+  // Not used yet, contextmenu is preferred for long press on web
+  // private _handleCoverHold(e: Event, entityId: string) {
+  //     if (this._layout === 'small') {
+  //         e.preventDefault();
+  //         e.stopPropagation();
+  //         this._openMoreInfo(entityId);
+  //     }
+  // }
+
   render() {
     const stateObj = this.hass.states[this.config.entity];
     
@@ -383,32 +459,39 @@ export class LightControlCard extends LitElement {
         }
     }
 
+    const layoutClass = this._layout || 'large';
+
     return html`
       <ha-card 
+        class="${layoutClass}"
         style="${bgStyle}"
         @pointerdown=${this._handlePointerDown}
         @pointerup=${this._handlePointerUp}
         @pointercancel=${this._handlePointerUp}
         @pointermove=${this._handlePointerMove}
       >
-        <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; transition: opacity 0.2s">
-            <!-- HEADER -->
-            <div class="header">
-                <div class="icon-container" @click=${this._toggleLight}>
-                    <ha-icon icon="${stateObj.attributes.icon || (isOn ? 'mdi:lightbulb-on' : 'mdi:lightbulb')}"></ha-icon>
+        <!-- LAYOUT CONTAINER -->
+        <div class="layout-container ${layoutClass}">
+            
+            <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; transition: opacity 0.2s">
+                <!-- HEADER -->
+                <div class="header">
+                    <div class="icon-container" @click=${this._toggleLight}>
+                        <ha-icon icon="${stateObj.attributes.icon || (isOn ? 'mdi:lightbulb-on' : 'mdi:lightbulb')}"></ha-icon>
+                    </div>
+                    <div class="info">
+                        <span class="name">${this.config.name || stateObj.attributes.friendly_name}</span>
+                        <span class="state">${isOn ? `${brightness}%` : 'Off'}</span>
+                    </div>
                 </div>
-                <div class="info">
-                    <span class="name">${this.config.name || stateObj.attributes.friendly_name}</span>
-                    <span class="state">${isOn ? `${brightness}%` : 'Off'}</span>
-                </div>
-            </div>
 
-            <!-- COVERS -->
-            ${covers.length > 0 ? html`
-                <div class="covers-section" @pointerdown=${(e: Event) => e.stopPropagation()}>
-                    ${covers.map((cover: string) => this._renderCover(cover))}
-                </div>
-            ` : ''}
+                <!-- COVERS (Hidden in compact) -->
+                ${covers.length > 0 && layoutClass !== 'compact' ? html`
+                    <div class="covers-section" @pointerdown=${(e: Event) => e.stopPropagation()}>
+                        ${covers.map((cover: string) => this._renderCover(cover))}
+                    </div>
+                ` : ''}
+            </div>
         </div>
 
         <!-- 2D INTERACTION CURSOR -->
@@ -441,8 +524,16 @@ export class LightControlCard extends LitElement {
           }
       }
 
+      // Add context menu listener for "Small" layout long-press
+      const contextHandler = (e: Event) => {
+          if (this._layout === 'small') {
+              e.preventDefault();
+              this._openMoreInfo(entityId);
+          }
+      };
+
       return html`
-        <div class="cover-row">
+        <div class="cover-row" @contextmenu=${contextHandler}>
             <div class="cover-info">
                 <ha-icon icon="${stateObj.attributes.icon || 'mdi:window-shutter'}"></ha-icon>
             </div>
@@ -480,15 +571,39 @@ export class LightControlCard extends LitElement {
         color: white;
         overflow: hidden;
         transition: background 0.1s linear;
-        padding: 16px;
+        /* padding: 16px; handled by layout container now */
         user-select: none;
         position: relative;
         cursor: grab;
         /* Ensure minimum height for controls */
-        min-height: 150px;
+        /* min-height: 150px; Dynamic now */
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
       }
+      ha-card.compact {
+          min-height: 50px;
+          cursor: pointer;
+      }
+      ha-card.small {
+          min-height: 120px;
+      }
+
+      .layout-container {
+         padding: 16px;
+         width: 100%;
+         height: 100%;
+         box-sizing: border-box;
+         display: flex;
+         flex-direction: column;
+      }
+      
+      .layout-container.medium {
+          flex-direction: row;
+          align-items: center;
+          gap: 24px;
+      }
+
       ha-card:active {
         cursor: grabbing;
       }
@@ -499,7 +614,15 @@ export class LightControlCard extends LitElement {
         justify-content: space-between;
         gap: 20px;
         pointer-events: none; /* Allow events to pass through wrapper, but children re-enable if needed */
+        flex: 1;
       }
+      .layout-container.medium .content {
+          flex-direction: row;
+          gap: 24px;
+          justify-content: flex-start;
+          align-items: center;
+      }
+
       .content > * {
          pointer-events: auto;
       }
@@ -511,6 +634,12 @@ export class LightControlCard extends LitElement {
         gap: 16px;
         flex: 1; /* Take remaining space so covers stay at bottom */
       }
+      /* In medium layout, header doesn't need to flex-grow heavily if side-by-side */
+      .layout-container.medium .header {
+          flex: 0 0 auto;
+          min-width: 200px;
+      }
+
       .icon-container {
         background: rgba(255, 255, 255, 0.2);
         border-radius: 50%;
@@ -574,6 +703,17 @@ export class LightControlCard extends LitElement {
         padding-top: 12px;
         backdrop-filter: blur(10px);
       }
+      /* In medium layout, covers are on the side, remove top border/margins */
+      .layout-container.medium .covers-section {
+         border-top: none;
+         margin: 0;
+         background: none;
+         backdrop-filter: none;
+         padding: 0;
+         flex: 1;
+         justify-content: center;
+      }
+
       .cover-row {
         display: flex;
         align-items: center;
