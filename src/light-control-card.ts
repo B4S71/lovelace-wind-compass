@@ -28,8 +28,7 @@ export class LightControlCard extends LitElement {
 
   // Internal state
   _interacting = false;
-  _interactionMode: 'light' | 'cover' = 'light';
-  _interactState: { main: string; secondary?: string } | null = null;
+  _activeSlider: { entityId: string, type: 'position' | 'tilt' } | null = null;
   private _pointerStartTime = 0;
   private _pointerStartX = 0;
   private _pointerStartY = 0;
@@ -81,18 +80,14 @@ export class LightControlCard extends LitElement {
     });
   }
 
-  private _controlCover(entityId: string, command: 'open_cover' | 'close_cover' | 'stop_cover') {
-    this.hass.callService('cover', command, {
-      entity_id: entityId
-    });
-  }
 
   private _handlePointerDown(e: PointerEvent) {
     // Ignore if clicking buttons or controls
     const path = e.composedPath();
     for (const el of path) {
       if ((el as HTMLElement).classList?.contains('control-btn') || 
-          (el as HTMLElement).classList?.contains('icon-container')) {
+          (el as HTMLElement).classList?.contains('icon-container') ||
+          (el as HTMLElement).classList?.contains('slider-control')) {
         return;
       }
     }
@@ -102,22 +97,22 @@ export class LightControlCard extends LitElement {
     this._pointerStartX = e.clientX;
     this._pointerStartY = e.clientY;
 
-    // improved mode detection using rect
     const card = this.shadowRoot?.querySelector('ha-card');
     if (card) {
-        const rect = card.getBoundingClientRect();
-        const y = (e.clientY - rect.top) / rect.height;
-        // Assume bottom 35% is cover control if covers exist
-        if (this.config.covers && this.config.covers.length > 0 && y > 0.65) {
-            this._interactionMode = 'cover';
-        } else {
-            this._interactionMode = 'light';
-        }
         card.setPointerCapture(e.pointerId);
     }
   }
 
   private _handlePointerUp(e: PointerEvent) {
+    if (this._activeSlider) {
+        this._activeSlider = null;
+        const target = e.target as HTMLElement;
+        if (target && target.releasePointerCapture) {
+             target.releasePointerCapture(e.pointerId);
+        }
+        return;
+    }
+
     if (!this._interacting) return;
     this._interacting = false;
     
@@ -134,90 +129,62 @@ export class LightControlCard extends LitElement {
 
       // If short tap and little movement
       if (duration < 250 && dist < 10) {
-        if (this._interactionMode === 'light') {
-            this._toggleLight();
-        }
-        // No action for tap on cover currently
+        this._toggleLight();
       } else {
-        // Else -> Apply changes based on mode
-        if (this._interactionMode === 'light') {
-            this._applyLightState(e, card);
-        } else {
-            this._applyCoverState(e, card);
-        }
+        this._applyLightState(e, card);
       }
     }
   }
 
   private _handlePointerMove(e: PointerEvent) {
-    if (!this._interacting) return;
-
-    // Calc visual feedback state but don't apply yet
-    // This provides the numbers for the status bar
-    const card = this.shadowRoot?.querySelector('ha-card');
-    if (card) {
-        const rect = card.getBoundingClientRect();
-        const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-        const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-
-        if (this._interactionMode === 'light') {
-            const brightness = Math.round((1 - y) * 100);
-            this._interactState = { main: `Brightness: ${brightness}%` };
-        } else {
-            let positionText = '';
-            // Match deadzones in _applyCoverState (0.1 and 0.9)
-            if (x < 0.1) {
-                positionText = 'Open';
-            } else if (x > 0.9) {
-                positionText = 'Closed';
-            } else {
-                const p = Math.round((1 - x) * 100);
-                positionText = `${p}%`;
-            }
-
-            // Optional: Tilt
-            const tilt = Math.round((1 - y) * 100);
-            
-            this._interactState = { 
-                main: `Position: ${positionText}`,
-                secondary: `Tilt: ${tilt}%`
-            };
-        }
+    if (this._activeSlider) {
+        this._handleSliderMove(e);
+        return;
     }
+
+    if (!this._interacting) return;
+    
+    // Light Control Feedback could be added here if needed
+    // Currently we just wait for UP to apply (optimized for network)
+    // or we could realtime update? The previous code had realtime updates logic but only for numbers.
   }
 
-  private _applyCoverState(e: PointerEvent, card: Element) {
-      const rect = card.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-      
-      const covers = this.config.covers || [];
-      covers.forEach(entityId => {
-          // X Axis: Open (0) -> Close (1)
-          if (x < 0.1) {
-              this.hass.callService('cover', 'open_cover', { entity_id: entityId });
-          } else if (x > 0.9) {
-              this.hass.callService('cover', 'close_cover', { entity_id: entityId });
-          } else {
-              const position = Math.round((1 - x) * 100);
-              this.hass.callService('cover', 'set_cover_position', { 
-                  entity_id: entityId, 
-                  position: position
-              });
-          }
+  private _handleSliderDown(e: PointerEvent, entityId: string, type: 'position' | 'tilt') {
+      e.stopPropagation();
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture(e.pointerId);
+      this._activeSlider = { entityId, type };
+      this._processSliderMove(e, target);
+  }
 
-          // Y Axis: Tilt (if supported)
-          // Top (0) -> Open (100?), Bottom (1) -> Closed (0?)
-          // Usually tilt: 0 is closed, 100 is open.
-          // Let's map Y=0 to 100, Y=1 to 0.
-          if (y >= 0 && y <= 1) { // Apply tilt if dragged
-               const tilt = Math.round((1 - y) * 100);
-               this.hass.callService('cover', 'set_cover_tilt_position', {
-                   entity_id: entityId,
-                   tilt_position: tilt
-               });
-          }
-      });
+  private _handleSliderMove(e: PointerEvent) {
+      if (!this._activeSlider) return;
+      // When captured, e.target is the slider element
+      this._processSliderMove(e, e.target as HTMLElement);
+  }
+
+  private _processSliderMove(e: PointerEvent, target: HTMLElement) {
+      const rect = target.getBoundingClientRect();
+      // Calculate percentage 0..100
+      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const percentage = Math.round(x * 100);
+
+      const { entityId, type } = this._activeSlider!;
+
+      if (type === 'position') {
+          this.hass.callService('cover', 'set_cover_position', {
+              entity_id: entityId,
+              position: percentage
+          });
+      } else {
+          this.hass.callService('cover', 'set_cover_tilt_position', {
+              entity_id: entityId,
+              tilt_position: percentage
+          });
+      }
+      // Note: In a real app we might want to throttle this call or update local state for smoothness
+      // and call service on UP. But for "slick" feel, immediate feedback is often desired if network allows.
+      // Optimistic UI updates handle the jumpiness.
   }
 
   private _applyLightState(e: PointerEvent, card: Element) {
@@ -272,47 +239,8 @@ export class LightControlCard extends LitElement {
     let bgStyle = 'background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);'; // Off state
 
     if (this._interacting) {
-      if (this._interactionMode === 'cover') {
-           // Cover Gradient: Left (Bright/Open) -> Right (Dark/Close)
-           // Variable thickness stripes: High frequency
-           // Base lines every 3%
-           
-           
-           const stripes = `linear-gradient(to bottom, 
-            transparent 0%, 
-            rgba(0,0,0,0.1) 4%, transparent 4%,
-            transparent 8%, 
-            rgba(0,0,0,0.15) 12%, transparent 12%,
-            transparent 15%,
-            rgba(0,0,0,0.2) 19%, transparent 19%,
-            transparent 22%,
-            rgba(0,0,0,0.2) 26%, transparent 26%,
-            transparent 29%,
-            rgba(0,0,0,0.25) 34%, transparent 34%,
-            transparent 37%,
-            rgba(0,0,0,0.25) 42%, transparent 42%,
-            transparent 45%,
-            rgba(0,0,0,0.3) 51%, transparent 51%,
-            transparent 54%,
-            rgba(0,0,0,0.3) 60%, transparent 60%,
-            transparent 63%,
-            rgba(0,0,0,0.35) 70%, transparent 70%,
-            transparent 73%,
-            rgba(0,0,0,0.35) 81%, transparent 81%,
-            transparent 84%,
-            rgba(0,0,0,0.4) 93%, transparent 93%,
-            transparent 96%,
-            rgba(0,0,0,0.4) 100%
-           )`;
-           
-           const verticalFade = `linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(0,0,0,0.4) 100%)`;
-           const baseGradient = `linear-gradient(to right, #87CEEB 0%, #333333 100%)`;
-
-           bgStyle = `background: ${verticalFade}, ${stripes}, ${baseGradient};`;
-      } else {
            // 2D Map: X=Temp (Blue->Orange), Y=Bright (White->Black)
            bgStyle = `background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), linear-gradient(to right, rgb(166, 209, 255) 0%, rgb(255, 160, 0) 100%);`;
-      }
     } else if (isOn) {
         // Normalize mireds 0..1
         const ratio = (currentMireds - minMireds) / (maxMireds - minMireds);
@@ -328,9 +256,6 @@ export class LightControlCard extends LitElement {
         }
     }
 
-    // Determine status text/badges
-    const showStatus = this._interacting && this._interactionMode === 'cover';
-
     return html`
       <ha-card 
         style="${bgStyle}"
@@ -339,7 +264,7 @@ export class LightControlCard extends LitElement {
         @pointercancel=${this._handlePointerUp}
         @pointermove=${this._handlePointerMove}
       >
-        <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; pointer-events: ${this._interacting ? 'none' : 'auto'}">
+        <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; transition: opacity 0.2s">
             <!-- HEADER -->
             <div class="header">
                 <div class="icon-container" @click=${this._toggleLight}>
@@ -353,19 +278,11 @@ export class LightControlCard extends LitElement {
 
             <!-- COVERS -->
             ${covers.length > 0 ? html`
-                <div class="covers-section">
+                <div class="covers-section" @pointerdown=${(e: Event) => e.stopPropagation()}>
                     ${covers.map((cover: string) => this._renderCover(cover))}
                 </div>
             ` : ''}
         </div>
-        
-        <!-- INTERACTION STATUS BADGES -->
-        ${showStatus && this._interactState ? html`
-        <div class="status-container">
-            <div class="status-badge">${this._interactState.main}</div>
-            ${this._interactState.secondary ? html`<div class="status-badge">${this._interactState.secondary}</div>` : ''}
-        </div>
-        ` : ''}
       </ha-card>
     `;
   }
@@ -374,22 +291,36 @@ export class LightControlCard extends LitElement {
       const stateObj = this.hass.states[entityId];
       if (!stateObj) return html``;
       
+      // Check for Tilt support (Bit 7 = 128)
+      const supportsTilt = (stateObj.attributes.supported_features & 128) === 128;
+      const position = typeof stateObj.attributes.current_position === 'number' ? stateObj.attributes.current_position : 0;
+      const tilt = typeof stateObj.attributes.current_tilt_position === 'number' ? stateObj.attributes.current_tilt_position : 0;
+
       return html`
         <div class="cover-row">
             <div class="cover-info">
                 <ha-icon icon="${stateObj.attributes.icon || 'mdi:window-shutter'}"></ha-icon>
-                <span>${stateObj.attributes.friendly_name}</span>
             </div>
-            <div class="cover-controls">
-                <div class="control-btn" @click=${() => this._controlCover(entityId, 'open_cover')}>
-                    <ha-icon icon="mdi:arrow-up"></ha-icon>
+            <div class="cover-sliders">
+                <!-- Position Slider -->
+                <div class="slider-control" 
+                     @pointerdown=${(e: PointerEvent) => this._handleSliderDown(e, entityId, 'position')}
+                >
+                     <div class="slider-bg"></div>
+                     <div class="slider-fill" style="width: ${position}%"></div>
+                     <div class="slider-label">Pos: ${position}%</div>
                 </div>
-                <div class="control-btn" @click=${() => this._controlCover(entityId, 'stop_cover')}>
-                    <ha-icon icon="mdi:stop"></ha-icon>
+
+                <!-- Tilt Slider -->
+                ${supportsTilt ? html`
+                <div class="slider-control" 
+                     @pointerdown=${(e: PointerEvent) => this._handleSliderDown(e, entityId, 'tilt')}
+                >
+                     <div class="slider-bg"></div>
+                     <div class="slider-fill" style="width: ${tilt}%"></div>
+                     <div class="slider-label">Tilt: ${tilt}%</div>
                 </div>
-                <div class="control-btn" @click=${() => this._controlCover(entityId, 'close_cover')}>
-                    <ha-icon icon="mdi:arrow-down"></ha-icon>
-                </div>
+                ` : ''}
             </div>
         </div>
       `;
@@ -398,7 +329,6 @@ export class LightControlCard extends LitElement {
   static get styles() {
     return css`
       :host {
-
         display: block;
       }
       ha-card {
@@ -410,6 +340,10 @@ export class LightControlCard extends LitElement {
         user-select: none;
         position: relative;
         cursor: grab;
+        /* Ensure minimum height for controls */
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
       }
       ha-card:active {
         cursor: grabbing;
@@ -417,8 +351,13 @@ export class LightControlCard extends LitElement {
       .content {
         display: flex;
         flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
         gap: 20px;
-        transition: opacity 0.2s ease-in-out;
+        pointer-events: none; /* Allow events to pass through wrapper, but children re-enable if needed */
+      }
+      .content > * {
+         pointer-events: auto;
       }
       
       /* HEADER */
@@ -426,6 +365,7 @@ export class LightControlCard extends LitElement {
         display: flex;
         align-items: center;
         gap: 16px;
+        flex: 1; /* Take remaining space so covers stay at bottom */
       }
       .icon-container {
         background: rgba(255, 255, 255, 0.2);
@@ -460,70 +400,67 @@ export class LightControlCard extends LitElement {
       .covers-section {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        margin-top: 8px;
+        gap: 8px;
         border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 16px;
+        padding-top: 12px;
+        /* Ensure distinct visual area */
+        background: rgba(0,0,0,0.2);
+        margin: -16px;
+        margin-top: 0;
+        padding: 16px;
+        padding-top: 12px;
+        backdrop-filter: blur(10px);
       }
       .cover-row {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        background: rgba(0,0,0,0.15);
-        padding: 8px 12px;
-        border-radius: 8px;
+        gap: 12px;
+        /* Removed background for row, using slider backgrounds */
       }
       .cover-info {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 0.9rem;
-        font-weight: 500;
-      }
-      .cover-controls {
-        display: flex;
-        gap: 8px;
-      }
-      .control-btn {
-        width: 32px;
-        height: 32px;
-        background: rgba(255,255,255,0.15);
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
         justify-content: center;
-        cursor: pointer;
-        transition: background 0.2s;
+        width: 32px;
       }
-      .control-btn:hover {
-        background: rgba(255,255,255,0.3);
-      }
-      .control-btn ha-icon {
-        --mdc-icon-size: 20px;
-      }
-      
-      .status-container {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
+      .cover-sliders {
+          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          align-items: flex-end;
-          pointer-events: none;
+          gap: 6px;
       }
-
-      .status-badge {
-          background: rgba(0,0,0,0.6);
-          color: white;
-          padding: 6px 10px;
-          border-radius: 8px;
-          backdrop-filter: blur(8px);
+      
+      .slider-control {
+          position: relative;
+          height: 24px;
+          border-radius: 12px;
+          overflow: hidden;
+          background: rgba(255,255,255,0.1);
+          cursor: pointer;
+          touch-action: none;
+      }
+      .slider-bg {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          opacity: 0.1;
+      }
+      .slider-fill {
+          position: absolute;
+          top: 0; left: 0; bottom: 0;
+          background: rgba(255,255,255,0.8);
+          transition: width 0.1s linear;
+          box-shadow: 0 0 10px rgba(255,255,255,0.3);
+      }
+      .slider-label {
+          position: relative;
+          z-index: 1;
+          font-size: 0.75rem;
           font-weight: 600;
-          font-size: 0.9rem;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+          color: white;
+          text-align: center;
+          line-height: 24px;
+          text-shadow: 0 1px 2px black;
+          pointer-events: none;
       }
 
       .header, .content {
