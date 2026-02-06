@@ -28,7 +28,13 @@ export class LightControlCard extends LitElement {
 
   // Internal state
   _interacting = false;
-  _activeSlider: { entityId: string, type: 'position' | 'tilt', startX: number, startVal: number } | null = null;
+  _activeSlider: { 
+    entityId: string; 
+    type: 'position' | 'tilt'; 
+    startX: number; 
+    startVal: number;
+    currentVal: number;
+  } | null = null;
   private _pointerStartTime = 0;
   private _pointerStartX = 0;
   private _pointerStartY = 0;
@@ -105,11 +111,27 @@ export class LightControlCard extends LitElement {
 
   private _handlePointerUp(e: PointerEvent) {
     if (this._activeSlider) {
+        const { entityId, type, currentVal } = this._activeSlider;
         this._activeSlider = null;
         const target = e.target as HTMLElement;
         if (target && target.releasePointerCapture) {
              target.releasePointerCapture(e.pointerId);
         }
+        
+        // Execute service call on release
+        if (type === 'position') {
+            this.hass.callService('cover', 'set_cover_position', {
+                entity_id: entityId,
+                position: currentVal
+            });
+        } else {
+            this.hass.callService('cover', 'set_cover_tilt_position', {
+                entity_id: entityId,
+                tilt_position: currentVal
+            });
+        }
+        
+        this.requestUpdate();
         return;
     }
 
@@ -152,16 +174,12 @@ export class LightControlCard extends LitElement {
   private _handleSliderDown(e: PointerEvent, entityId: string, type: 'position' | 'tilt', currentVal: number) {
       e.stopPropagation();
       const target = e.currentTarget as HTMLElement;
-      // Only allow dragging if clicking the handle area (or we treat the whole things as a slider but relative?)
-      // User said "not a click onto target". So let's implement relative drag or handle-only drag.
-      // Let's go with: Click anywhere starts drag, but doesn't jump. It grabs the current handle and moves it relative to your finger?
-      // Or "swipe-to-start" style usually means grabbing the handle.
-      
       this._activeSlider = { 
           entityId, 
           type, 
           startX: e.clientX, 
-          startVal: currentVal 
+          startVal: currentVal,
+          currentVal: currentVal
       };
       
       target.setPointerCapture(e.pointerId);
@@ -171,7 +189,6 @@ export class LightControlCard extends LitElement {
       if (!this._activeSlider) return;
       
       const target = e.target as HTMLElement;
-      // Ensure we get the reference slider control even if target is a child
       const slider = target.closest('.slider-control') as HTMLElement;
       if (slider) {
           this._processSliderMove(e, slider);
@@ -180,25 +197,20 @@ export class LightControlCard extends LitElement {
 
   private _processSliderMove(e: PointerEvent, slider: HTMLElement) {
       const rect = slider.getBoundingClientRect();
-      const { startX, startVal, entityId, type } = this._activeSlider!;
+      const { startX, startVal } = this._activeSlider!;
       
       // Calculate delta in %
       const deltaPixels = e.clientX - startX;
+      
+      // Calculate active width (total width - handle width essentially)
+      // but for simplicity let's use full width mapping 
       const deltaPercent = (deltaPixels / rect.width) * 100;
       
       let newVal = Math.max(0, Math.min(100, Math.round(startVal + deltaPercent)));
-
-      if (type === 'position') {
-          this.hass.callService('cover', 'set_cover_position', {
-              entity_id: entityId,
-              position: newVal
-          });
-      } else {
-          this.hass.callService('cover', 'set_cover_tilt_position', {
-              entity_id: entityId,
-              tilt_position: newVal
-          });
-      }
+      
+      // Update local state for rendering
+      this._activeSlider!.currentVal = newVal;
+      this.requestUpdate();
   }
 
   private _applyLightState(e: PointerEvent, card: Element) {
@@ -307,8 +319,18 @@ export class LightControlCard extends LitElement {
       
       // Check for Tilt support (Bit 7 = 128)
       const supportsTilt = (stateObj.attributes.supported_features & 128) === 128;
-      const position = typeof stateObj.attributes.current_position === 'number' ? stateObj.attributes.current_position : 0;
-      const tilt = typeof stateObj.attributes.current_tilt_position === 'number' ? stateObj.attributes.current_tilt_position : 0;
+      
+      let position = typeof stateObj.attributes.current_position === 'number' ? stateObj.attributes.current_position : 0;
+      let tilt = typeof stateObj.attributes.current_tilt_position === 'number' ? stateObj.attributes.current_tilt_position : 0;
+
+      // Override with active slider value if dragging
+      if (this._activeSlider && this._activeSlider.entityId === entityId) {
+          if (this._activeSlider.type === 'position') {
+              position = this._activeSlider.currentVal;
+          } else if (this._activeSlider.type === 'tilt') {
+              tilt = this._activeSlider.currentVal;
+          }
+      }
 
       return html`
         <div class="cover-row">
