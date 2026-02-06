@@ -97,13 +97,26 @@ export class LightControlCard extends LitElement {
           return;
       }
 
-      if (height < 100) {
+      // 1. Single Row (~50-80px) -> Compact
+      if (height < 90) {
           this._layout = 'compact';
-      } else if (height < 350 && width >= 250) { // Extended range for landscape (covering 3-4 rows)
+          return;
+      }
+
+      // 2. Determine Aspect Ratio (Grid-aware)
+      // "Wide" means spanning more columns than rows
+      const aspectRatio = width / height;
+      const isWide = aspectRatio > 1.1; // Slightly rectangular or wider
+
+      if (isWide && height < 350) {
+          // 2-5 Rows High, but Wide -> Landscape (Medium)
+          // This ensures "3 rows high" uses landscape if width allows
           this._layout = 'medium';
-      } else if (height < 200) {
+      } else if (height < 220) {
+          // 2-3 Rows High, Narrow/Square -> Vertical Stack (Small)
           this._layout = 'small';
       } else {
+          // 4+ Rows High, Narrow/Square -> Spaced Vertical (Large)
           this._layout = 'large';
       }
   }
