@@ -1,6 +1,6 @@
 /**
  * Simple Climate Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -9,7 +9,7 @@ import type {
   SimpleClimateCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c SIMPLE-CLIMATE-CARD %c ${CARD_VERSION} `,
@@ -447,7 +447,6 @@ export class SimpleClimateCard extends LitElement {
 // Register Custom Element
 if (!customElements.get("slick-simple-climate-card")) {
   customElements.define("slick-simple-climate-card", SimpleClimateCard);
-  console.info("%c slick-simple-climate-card Registered", "color: green; font-weight: bold;");
 }
 
 class SimpleClimateCardEditor extends LitElement {

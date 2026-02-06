@@ -1,6 +1,6 @@
 /**
  * Squircle Clock Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 import type { HomeAssistant, SquircleClockCardConfig } from './types';
 export declare class SquircleClockCard extends HTMLElement {

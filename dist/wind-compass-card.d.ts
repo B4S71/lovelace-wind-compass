@@ -1,6 +1,6 @@
 /**
  * Wind Compass Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 import type { HomeAssistant, WindCompassCardConfig } from './types';
 export declare class WindCompassCard extends HTMLElement {

@@ -1,6 +1,6 @@
 /**
  * Mower Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css, PropertyValues } from 'lit';
@@ -9,7 +9,7 @@ import type {
   MowerCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c MOWER-CARD %c ${CARD_VERSION} `,
@@ -679,7 +679,6 @@ export class MowerCard extends LitElement {
       border-radius: var(--ha-card-border-radius, 12px);
       color: var(--primary-text-color);
       padding: 16px;
-      font-family: var(--paper-font-body1_-_font-family);
       display: flex;
       flex-direction: column;
       gap: 8px; /* Reduced from 16px for better default fit */
@@ -1154,8 +1153,12 @@ export class MowerCardEditor extends LitElement {
   }
 }
 
-customElements.define('slick-mower-card', MowerCard);
-customElements.define('slick-mower-card-editor', MowerCardEditor);
+if (!customElements.get('slick-mower-card')) {
+  customElements.define('slick-mower-card', MowerCard);
+}
+if (!customElements.get('slick-mower-card-editor')) {
+  customElements.define('slick-mower-card-editor', MowerCardEditor);
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({

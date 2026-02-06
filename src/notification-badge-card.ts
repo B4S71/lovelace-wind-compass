@@ -1,6 +1,6 @@
 /**
  * Notification Badge Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -9,7 +9,7 @@ import type {
   NotificationBadgeCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c NOTIFICATION-BADGE-CARD %c ${CARD_VERSION} `,
@@ -342,13 +342,25 @@ export class NotificationBadgeCardEditor extends LitElement {
   }
 }
 
-customElements.define('slick-notification-badge-card', NotificationBadgeCard);
-customElements.define('slick-notification-badge-card-editor', NotificationBadgeCardEditor);
+if (!customElements.get('slick-notification-badge-card')) {
+  customElements.define('slick-notification-badge-card', NotificationBadgeCard);
+}
+if (!customElements.get('slick-notification-badge-card-editor')) {
+  customElements.define('slick-notification-badge-card-editor', NotificationBadgeCardEditor);
+}
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+    type: "slick-notification-badge-card",
+    name: "Slick Notification Badge",
+    preview: true,
+    description: "Displays badges for calendar events and active entities."
+});
 
 window.customBadges = window.customBadges || [];
 window.customBadges.push({
     type: "slick-notification-badge-card",
-    name: "Slick Notification Badge Card",
+    name: "Slick Notification Badge",
     preview: true,
     description: "Displays badges for calendar events and active entities."
 });

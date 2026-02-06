@@ -1,6 +1,6 @@
 /**
  * Mini Weather Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -11,7 +11,7 @@ import type {
   HistoryDataPoint,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c MINI-WEATHER-CARD %c ${CARD_VERSION} `,
@@ -557,7 +557,6 @@ export class MiniWeatherCard extends LitElement {
 }
 if (!customElements.get("slick-minimal-weather-card")) {
   customElements.define("slick-minimal-weather-card", MiniWeatherCard);
-  console.info("%c slick-minimal-weather-card Registered", "color: green; font-weight: bold;");
 }
 
 class MiniWeatherCardEditor extends LitElement {

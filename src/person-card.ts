@@ -1,6 +1,6 @@
 /**
  * Person Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -9,7 +9,7 @@ import type {
   PersonCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c PERSON-CARD %c ${CARD_VERSION} `,
@@ -44,10 +44,6 @@ export class PersonCard extends LitElement {
       people: people,
       layout: "wrap"
     };
-  }
-
-  constructor() {
-    super();
   }
 
   getCardSize() {
@@ -169,16 +165,8 @@ export class PersonCard extends LitElement {
   `;
 }
 
-// Robust Registration
-const registry = window.customElements;
-const existingClass = registry.get('slick-person-card');
-
-try {
-  if (!existingClass) {
-    registry.define('slick-person-card', PersonCard);
-  }
-} catch (e) {
-  console.error("Failed to register slick-person-card", e);
+if (!customElements.get('slick-person-card')) {
+  customElements.define('slick-person-card', PersonCard);
 }
 
 class PersonCardEditor extends LitElement {
@@ -274,7 +262,7 @@ window.customCards.push({
 
 window.customBadges = window.customBadges || [];
 window.customBadges.push({
-  type: "custom:slick-person-card",
+  type: "slick-person-card",
   name: "Slick Person Badge",
   description: "A round person badge.",
   preview: true

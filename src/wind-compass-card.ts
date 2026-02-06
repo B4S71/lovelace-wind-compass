@@ -1,6 +1,6 @@
 /**
  * Wind Compass Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -12,9 +12,12 @@ import type {
   HistoryState,
 } from './types';
 
+const CARD_VERSION = "0.2.0";
+
 console.info(
-  '%c WindCompassCard Loaded: TS_APPLE_FINAL ',
-  'color: white; background: #000000; font-weight: bold;'
+  `%c WIND-COMPASS-CARD %c ${CARD_VERSION} `,
+  'color: white; background: #607d8b; font-weight: 700;',
+  'color: #607d8b; background: white; font-weight: 700;'
 );
 
 export class WindCompassCard extends HTMLElement {
@@ -147,7 +150,6 @@ export class WindCompassCard extends HTMLElement {
           display: block;
           width: 100%;
           height: 100%;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           font-weight: 200;
           background: var(--ha-card-background, var(--card-background-color, white));
           border-radius: var(--ha-card-border-radius, 12px);
@@ -908,13 +910,8 @@ export class WindCompassCard extends HTMLElement {
   }
 }
 
-try {
-  if (!customElements.get('slick-wind-compass-card')) {
-    customElements.define('slick-wind-compass-card', WindCompassCard);
-    console.info("%c slick-wind-compass-card Registered", "color: green; font-weight: bold;");
-  }
-} catch (e) {
-  console.error("Failed to register slick-wind-compass-card", e);
+if (!customElements.get('slick-wind-compass-card')) {
+  customElements.define('slick-wind-compass-card', WindCompassCard);
 }
 
 class WindCompassEditor extends LitElement {

@@ -1,13 +1,13 @@
 /**
  * Light Control Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css, PropertyValues } from 'lit';
 import type { HomeAssistant, LightControlCardConfig } from './types';
 import './light-control-card-editor';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c SLICK-LIGHT-CONTROL-CARD %c ${CARD_VERSION} `,
@@ -962,7 +962,9 @@ export class LightControlCard extends LitElement {
   }
 }
 
-customElements.define('slick-light-control-card', LightControlCard);
+if (!customElements.get('slick-light-control-card')) {
+  customElements.define('slick-light-control-card', LightControlCard);
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({

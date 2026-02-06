@@ -59,4 +59,6 @@ export class LightControlCardEditor extends LitElement {
   }
 }
 
-customElements.define('slick-light-control-card-editor', LightControlCardEditor);
+if (!customElements.get('slick-light-control-card-editor')) {
+  customElements.define('slick-light-control-card-editor', LightControlCardEditor);
+}

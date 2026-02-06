@@ -1,6 +1,6 @@
 /**
  * Simple Climate Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 import { LitElement } from 'lit';
 import type { HomeAssistant, SimpleClimateCardConfig } from './types';

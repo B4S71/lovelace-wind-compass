@@ -1,10 +1,18 @@
 /**
  * Energy Flow Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
 import type { HomeAssistant, EnergyFlowCardConfig } from './types';
+
+const CARD_VERSION = "0.2.0";
+
+console.info(
+  `%c ENERGY-FLOW-CARD %c ${CARD_VERSION} `,
+  'color: white; background: #4caf50; font-weight: 700;',
+  'color: #4caf50; background: white; font-weight: 700;'
+);
 
 export class EnergyFlowCard extends LitElement {
   hass!: HomeAssistant;
@@ -303,7 +311,6 @@ export class EnergyFlowCard extends LitElement {
       :host {
         display: block;
         height: 100%;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         isolation: isolate;
       }
       ha-card {
@@ -573,23 +580,22 @@ export class EnergyFlowCard extends LitElement {
 
 if (!customElements.get("slick-energy-flow-card")) {
   customElements.define("slick-energy-flow-card", EnergyFlowCard);
-  console.info("%c slick-energy-flow-card Registered", "color: green; font-weight: bold;");
 }
 
 // Editor Class
 export class EnergyFlowCardEditor extends LitElement {
-  hass: any;
-  _config: any;
+  hass!: HomeAssistant;
+  _config!: EnergyFlowCardConfig;
 
   static get properties() {
     return {
-      hass: {},
-      _config: {},
+      hass: { attribute: false },
+      _config: { state: true },
     };
   }
 
-  setConfig(config: any) { this._config = config; }
-  _valueChanged(ev: any) { 
+  setConfig(config: EnergyFlowCardConfig) { this._config = config; }
+  _valueChanged(ev: CustomEvent) { 
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: { ...this._config, ...ev.detail.value } }, bubbles: true, composed: true })); 
   }
   render() {

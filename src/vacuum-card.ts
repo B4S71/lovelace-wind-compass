@@ -1,6 +1,6 @@
 /**
  * Vacuum Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css, PropertyValues } from 'lit';
@@ -9,7 +9,7 @@ import type {
   VacuumCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c VACUUM-CARD %c ${CARD_VERSION} `,
@@ -674,7 +674,6 @@ export class VacuumCard extends LitElement {
       border-radius: var(--ha-card-border-radius, 12px);
       color: var(--primary-text-color);
       padding: 16px;
-      font-family: var(--paper-font-body1_-_font-family);
       display: flex;
       flex-direction: column;
       gap: 8px; /* Reduced from 16px */
@@ -1149,8 +1148,12 @@ export class VacuumCardEditor extends LitElement {
   }
 }
 
-customElements.define('slick-vacuum-card', VacuumCard);
-customElements.define('slick-vacuum-card-editor', VacuumCardEditor);
+if (!customElements.get('slick-vacuum-card')) {
+  customElements.define('slick-vacuum-card', VacuumCard);
+}
+if (!customElements.get('slick-vacuum-card-editor')) {
+  customElements.define('slick-vacuum-card-editor', VacuumCardEditor);
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({
