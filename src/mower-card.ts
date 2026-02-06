@@ -1,6 +1,6 @@
 /**
  * Mower Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css, PropertyValues } from 'lit';
@@ -9,7 +9,7 @@ import type {
   MowerCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c MOWER-CARD %c ${CARD_VERSION} `,
@@ -678,8 +678,7 @@ export class MowerCard extends LitElement {
       box-shadow: var(--ha-card-box-shadow, 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12));
       border-radius: var(--ha-card-border-radius, 12px);
       color: var(--primary-text-color);
-      padding: 16px;
-      font-family: var(--paper-font-body1_-_font-family);
+      padding: clamp(12px, 3%, 20px);
       display: flex;
       flex-direction: column;
       gap: 8px; /* Reduced from 16px for better default fit */
@@ -703,7 +702,7 @@ export class MowerCard extends LitElement {
     .mower-card-container.tiny {
         flex-direction: row;
         align-items: center;
-        padding: 0 12px;
+        padding: 8px 12px;
         gap: 12px;
     }
 
@@ -730,12 +729,12 @@ export class MowerCard extends LitElement {
     }
 
     .mower-card-container.tiny .status {
-        font-size: 0.9rem;
+        font-size: clamp(0.75rem, 2.5cqi, 0.9rem);
         line-height: 1.1;
     }
 
     .mower-card-container.tiny .room {
-        font-size: 0.75rem;
+        font-size: clamp(0.6rem, 2cqi, 0.75rem);
         line-height: 1.1;
         opacity: 0.8;
     }
@@ -751,7 +750,7 @@ export class MowerCard extends LitElement {
 
     .mower-card-container.tiny .swipe-slider {
         height: 36px;
-        font-size: 0.9rem;
+        font-size: clamp(0.7rem, 2cqi, 0.9rem);
     }
 
     .mower-card-container.tiny .action-btn {
@@ -774,7 +773,7 @@ export class MowerCard extends LitElement {
     }
     
     .mower-card-container.short .status {
-        font-size: 1rem;
+        font-size: clamp(0.8rem, 2.5cqi, 1rem);
     }
     
     .actions {
@@ -822,8 +821,8 @@ export class MowerCard extends LitElement {
     }
 
     .status {
-      font-size: 1.2rem;
-      font-weight: 500;
+      font-size: clamp(0.9rem, 3cqi, 1.3rem);
+      font-weight: 300;
       line-height: 1.4;
       white-space: nowrap; 
       overflow: hidden; 
@@ -831,8 +830,8 @@ export class MowerCard extends LitElement {
     }
 
     .room {
-      font-size: 1rem;
-      font-weight: 500;
+      font-size: clamp(0.75rem, 2.5cqi, 1rem);
+      font-weight: 300;
       opacity: 0.9;
       line-height: 1.2;
       white-space: nowrap; 
@@ -841,7 +840,7 @@ export class MowerCard extends LitElement {
     }
 
     .battery {
-      font-size: 0.9rem;
+      font-size: clamp(0.7rem, 2cqi, 0.9rem);
       opacity: 0.7;
       display: flex;
       align-items: center;
@@ -849,7 +848,7 @@ export class MowerCard extends LitElement {
     }
 
     .stats {
-      font-size: 0.9rem;
+      font-size: clamp(0.7rem, 2cqi, 0.9rem);
       opacity: 0.7;
       margin-top: 4px;
     }
@@ -942,8 +941,8 @@ export class MowerCard extends LitElement {
         width: 100%;
         text-align: center;
         color: var(--secondary-text-color);
-        font-size: 0.9rem;
-        font-weight: 500;
+        font-size: clamp(0.7rem, 2cqi, 0.9rem);
+        font-weight: 300;
         letter-spacing: 0.5px;
         pointer-events: none;
         user-select: none;
@@ -1038,7 +1037,7 @@ export class MowerCard extends LitElement {
     }
 
     .time-label {
-        font-size: 0.6rem;
+        font-size: clamp(0.45rem, 1.5cqi, 0.6rem);
         text-transform: uppercase;
         opacity: 0.8;
         margin-bottom: 2px;
@@ -1055,8 +1054,8 @@ export class MowerCard extends LitElement {
     .time-inputs {
         display: flex;
         align-items: center;
-        font-size: 1.1rem;
-        font-weight: 600;
+        font-size: clamp(0.85rem, 2.5cqi, 1.1rem);
+        font-weight: 400;
         line-height: 1;
     }
 
@@ -1154,8 +1153,12 @@ export class MowerCardEditor extends LitElement {
   }
 }
 
-customElements.define('slick-mower-card', MowerCard);
-customElements.define('slick-mower-card-editor', MowerCardEditor);
+if (!customElements.get('slick-mower-card')) {
+  customElements.define('slick-mower-card', MowerCard);
+}
+if (!customElements.get('slick-mower-card-editor')) {
+  customElements.define('slick-mower-card-editor', MowerCardEditor);
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({

@@ -1,6 +1,6 @@
 /**
  * Type definitions for Home Assistant custom cards
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 export interface HomeAssistant {
@@ -202,6 +202,16 @@ export interface NotificationBadgeCardConfig extends LovelaceCardConfig {
   calendars?: CalendarBadgeConfig[];
   entities?: EntityBadgeConfig[];
 }
+
+// Light Control Card Types
+export interface LightControlCardConfig extends LovelaceCardConfig {
+  type: 'custom:slick-light-control-card';
+  entity: string;
+  name?: string;
+  covers?: string[];
+  layout?: 'auto' | 'compact' | 'small' | 'medium' | 'large';
+}
+
 
 
 

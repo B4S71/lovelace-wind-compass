@@ -1,6 +1,6 @@
 /**
  * Notification Badge Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -9,7 +9,7 @@ import type {
   NotificationBadgeCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c NOTIFICATION-BADGE-CARD %c ${CARD_VERSION} `,
@@ -174,25 +174,27 @@ export class NotificationBadgeCard extends LitElement {
   static styles = css`
     :host {
       display: block;
+      height: 100%;
+      container-type: inline-size;
     }
     
     .badge-container {
         display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
+        flex-wrap: nowrap;
+        gap: clamp(6px, 3cqi, 12px);
         align-items: center;
-        justify-content: flex-end; /* Align right */
-        margin-left: 12px;
-        margin-bottom: 12px;
-        padding-bottom: 4px; /* Extra shadow space */
+        justify-content: flex-end;
+        padding: clamp(6px, 3cqi, 12px);
+        height: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
     }
     
     .badge {
         position: relative;
-        width: 38px;
-        height: 38px;
+        width: clamp(28px, 10cqi, 38px);
+        height: clamp(28px, 10cqi, 38px);
         border-radius: 50%;
-        /* Default fallback */
         background: var(--primary-color);
         display: flex;
         align-items: center;
@@ -203,6 +205,7 @@ export class NotificationBadgeCard extends LitElement {
         border: 1px solid transparent;
         box-sizing: border-box;
         box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        flex: 0 0 auto;
     }
     
     /* Make entities feel more solid/pronounced */
@@ -239,7 +242,7 @@ export class NotificationBadgeCard extends LitElement {
         background: white;
         color: #333;
         font-size: 0.7rem;
-        font-weight: 900;
+        font-weight: 700;
         min-width: 16px;
         height: 16px;
         border-radius: 8px;
@@ -336,13 +339,25 @@ export class NotificationBadgeCardEditor extends LitElement {
   }
 }
 
-customElements.define('slick-notification-badge-card', NotificationBadgeCard);
-customElements.define('slick-notification-badge-card-editor', NotificationBadgeCardEditor);
+if (!customElements.get('slick-notification-badge-card')) {
+  customElements.define('slick-notification-badge-card', NotificationBadgeCard);
+}
+if (!customElements.get('slick-notification-badge-card-editor')) {
+  customElements.define('slick-notification-badge-card-editor', NotificationBadgeCardEditor);
+}
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+    type: "slick-notification-badge-card",
+    name: "Slick Notification Badge",
+    preview: true,
+    description: "Displays badges for calendar events and active entities."
+});
 
 window.customBadges = window.customBadges || [];
 window.customBadges.push({
     type: "slick-notification-badge-card",
-    name: "Slick Notification Badge Card",
+    name: "Slick Notification Badge",
     preview: true,
     description: "Displays badges for calendar events and active entities."
 });

@@ -1,6 +1,6 @@
 /**
  * Type definitions for Home Assistant custom cards
- * @version 0.1.0
+ * @version 0.2.0
  */
 export interface HomeAssistant {
     states: Record<string, HassEntity>;
@@ -173,5 +173,12 @@ export interface NotificationBadgeCardConfig extends LovelaceCardConfig {
     type: 'custom:slick-notification-badge-card';
     calendars?: CalendarBadgeConfig[];
     entities?: EntityBadgeConfig[];
+}
+export interface LightControlCardConfig extends LovelaceCardConfig {
+    type: 'custom:slick-light-control-card';
+    entity: string;
+    name?: string;
+    covers?: string[];
+    layout?: 'auto' | 'compact' | 'small' | 'medium' | 'large';
 }
 //# sourceMappingURL=types.d.ts.map

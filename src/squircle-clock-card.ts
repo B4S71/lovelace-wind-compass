@@ -1,6 +1,6 @@
 /**
  * Squircle Clock Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html } from 'lit';
@@ -8,6 +8,14 @@ import type {
   HomeAssistant,
   SquircleClockCardConfig,
 } from './types';
+
+const CARD_VERSION = "0.2.0";
+
+console.info(
+  `%c SQUIRCLE-CLOCK-CARD %c ${CARD_VERSION} `,
+  'color: white; background: #795548; font-weight: 700;',
+  'color: #795548; background: white; font-weight: 700;'
+);
 
 interface SchemaItem {
   name: string;
@@ -473,7 +481,6 @@ class SquircleClockEditor extends LitElement {
 
 if (!customElements.get('slick-squircle-clock-card')) {
   customElements.define('slick-squircle-clock-card', SquircleClockCard);
-  console.info("%c slick-squircle-clock-card Registered", "color: green; font-weight: bold;");
 }
 if (!customElements.get('slick-squircle-clock-editor')) {
   customElements.define('slick-squircle-clock-editor', SquircleClockEditor);

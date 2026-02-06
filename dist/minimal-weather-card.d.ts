@@ -1,6 +1,6 @@
 /**
  * Mini Weather Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 import { LitElement } from 'lit';
 import type { HomeAssistant, MiniWeatherCardConfig, ForecastData, HistoryDataPoint } from './types';
@@ -60,7 +60,7 @@ export declare class MiniWeatherCard extends LitElement {
         area: string;
     } | null;
     render(): import("lit-html").TemplateResult<1>;
-    _renderRow(day: ForecastData): import("lit-html").TemplateResult<1>;
+    _renderRow(day: ForecastData, globalMin?: number, globalMax?: number): import("lit-html").TemplateResult<1>;
     _getIcon(condition: string): string;
     _openMoreInfo(): void;
     _getCurrentGradients(): Gradients;

@@ -1,6 +1,6 @@
 /**
  * Simple Climate Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -9,7 +9,7 @@ import type {
   SimpleClimateCardConfig,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c SIMPLE-CLIMATE-CARD %c ${CARD_VERSION} `,
@@ -323,6 +323,7 @@ export class SimpleClimateCard extends LitElement {
         box-shadow: var(--ha-card-box-shadow, none);
         cursor: pointer;
         color: white;
+        container-type: inline-size; /* Enable container query units (cqi) */
       }
       .bg-layer {
         position: absolute;
@@ -333,30 +334,37 @@ export class SimpleClimateCard extends LitElement {
       .container {
         position: relative;
         z-index: 1;
-        padding: 16px;
+        padding: clamp(12px, 4%, 20px);
         height: 100%;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        justify-content: space-between; /* Header at top, Targets at bottom */
+        justify-content: space-between;
+        min-height: 0;
+        overflow: hidden;
       }
       
       .header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        flex: 0 0 auto;
+        min-height: 0;
       }
       
       .temp-big {
-        font-size: 3.5rem;
-        font-weight: 200;
+        font-size: clamp(2rem, 10cqi, 4rem);
+        font-weight: 100;
         line-height: 1;
         text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        white-space: nowrap;
+        letter-spacing: -1px;
       }
       .temp-big .unit {
-        font-size: 2rem;
+        font-size: clamp(1rem, 4cqi, 2.2rem);
         vertical-align: top;
         opacity: 0.8;
+        font-weight: 200;
       }
       
       .header-right {
@@ -364,34 +372,44 @@ export class SimpleClimateCard extends LitElement {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
+        flex: 0 0 auto;
       }
       .main-icon {
-        --mdc-icon-size: 32px;
+        --mdc-icon-size: clamp(22px, 7cqi, 36px);
         filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
         margin-bottom: 4px;
       }
       .state-label {
-        font-size: 0.9rem;
-        font-weight: 500;
+        font-size: clamp(0.7rem, 3cqi, 1rem);
+        font-weight: 300;
         opacity: 0.9;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .spacer {
         flex: 1;
+        min-height: 0;
       }
 
       .footer-row {
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
+        flex: 0 0 auto;
+        min-height: 0;
       }
       
       .name {
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: clamp(0.8rem, 3.5cqi, 1.1rem);
+        font-weight: 500;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         opacity: 0.9;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .targets {
@@ -399,8 +417,9 @@ export class SimpleClimateCard extends LitElement {
         align-items: center;
         background: rgba(0,0,0,0.2);
         border-radius: 20px;
-        padding: 4px 12px;
+        padding: 4px clamp(6px, 2%, 12px);
         backdrop-filter: blur(4px);
+        flex: 0 0 auto;
       }
       .target-group {
         display: flex;
@@ -408,13 +427,13 @@ export class SimpleClimateCard extends LitElement {
         align-items: flex-end;
       }
       .target-label {
-        font-size: 0.65rem;
+        font-size: clamp(0.5rem, 2cqi, 0.65rem);
         text-transform: uppercase;
         opacity: 0.7;
       }
       .target-val {
-        font-size: 1.1rem;
-        font-weight: 600;
+        font-size: clamp(0.85rem, 3cqi, 1.1rem);
+        font-weight: 400;
       }
       .divider {
         width: 1px;
@@ -423,8 +442,8 @@ export class SimpleClimateCard extends LitElement {
         margin: 0 10px;
       }
       .target-chip {
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: 400;
+        font-size: clamp(0.7rem, 2.5cqi, 0.9rem);
       }
     `;
   }
@@ -433,7 +452,6 @@ export class SimpleClimateCard extends LitElement {
 // Register Custom Element
 if (!customElements.get("slick-simple-climate-card")) {
   customElements.define("slick-simple-climate-card", SimpleClimateCard);
-  console.info("%c slick-simple-climate-card Registered", "color: green; font-weight: bold;");
 }
 
 class SimpleClimateCardEditor extends LitElement {

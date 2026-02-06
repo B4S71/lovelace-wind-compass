@@ -1,6 +1,6 @@
 /**
  * Mini Weather Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
@@ -11,7 +11,7 @@ import type {
   HistoryDataPoint,
 } from './types';
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.2.0";
 
 console.info(
   `%c MINI-WEATHER-CARD %c ${CARD_VERSION} `,
@@ -399,7 +399,7 @@ export class MiniWeatherCard extends LitElement {
         if (sensorState && !isNaN(parseFloat(sensorState.state))) currentTemp = sensorState.state;
     }
 
-    const FIXED_HEIGHT = 162; const ROW_HEIGHT = 32;
+    const FIXED_HEIGHT = 110; const ROW_HEIGHT = 28;
     let maxRows = Math.floor((this._cardHeight - FIXED_HEIGHT) / ROW_HEIGHT);
     if (maxRows < 0) maxRows = 0;
     const showForecast = this._cardHeight > 140;
@@ -454,7 +454,20 @@ export class MiniWeatherCard extends LitElement {
 
             ${showForecast ? html`
                 <div class="forecast-list">
-                    ${forecast.map((day: ForecastData) => this._renderRow(day))}
+                    ${(() => {
+                      let globalMin = Infinity, globalMax = -Infinity;
+                      for (const f of forecast) {
+                        const hi = f.temperature ?? f.temp_max;
+                        const lo = f.templow ?? f.temp_min;
+                        if (lo !== undefined && lo < globalMin) globalMin = lo;
+                        if (hi !== undefined && hi > globalMax) globalMax = hi;
+                        if (lo === undefined && hi !== undefined && hi < globalMin) globalMin = hi;
+                      }
+                      if (!isFinite(globalMin)) globalMin = 0;
+                      if (!isFinite(globalMax)) globalMax = globalMin + 1;
+                      if (globalMax === globalMin) globalMax = globalMin + 1;
+                      return forecast.map((day: ForecastData) => this._renderRow(day, globalMin, globalMax));
+                    })()}
                     ${fullForecast.length === 0 ? html`<div class="loading">Lade...</div>` : ''}
                 </div>
             ` : html`<div style="flex:1;"></div>`} 
@@ -465,7 +478,7 @@ export class MiniWeatherCard extends LitElement {
     `;
   }
 
-  _renderRow(day: ForecastData) {
+  _renderRow(day: ForecastData, globalMin: number = 0, globalMax: number = 1) {
     const date = new Date(day.datetime);
     const isHourly = this.config.mode === 'hourly';
     const label = isHourly ? date.toLocaleTimeString(this.hass.language, { hour: '2-digit', minute: '2-digit' }) : date.toLocaleDateString(this.hass.language, { weekday: 'short' });
@@ -473,7 +486,12 @@ export class MiniWeatherCard extends LitElement {
     const low = day.templow ?? day.temp_min;
 
     if (isHourly && temp !== undefined) return html`<div class="row hourly"><div class="day-name">${label}</div><div class="icon-small"><ha-icon icon="${this._getIcon(day.condition)}"></ha-icon></div><div class="temp-single">${Math.round(temp)}°</div></div>`;
-    else if (low !== undefined && temp !== undefined) return html`<div class="row"><div class="day-name">${label}</div><div class="icon-small"><ha-icon icon="${this._getIcon(day.condition)}"></ha-icon></div><div class="bars"><span class="val-low">${Math.round(low)}°</span><div class="bar-track"><div class="bar-fill"></div></div><span class="val-high">${Math.round(temp)}°</span></div></div>`;
+    else if (low !== undefined && temp !== undefined) {
+      const range = globalMax - globalMin;
+      const leftPct = ((low - globalMin) / range) * 100;
+      const rightPct = ((globalMax - temp) / range) * 100;
+      return html`<div class="row"><div class="day-name">${label}</div><div class="icon-small"><ha-icon icon="${this._getIcon(day.condition)}"></ha-icon></div><div class="bars"><span class="val-low">${Math.round(low)}°</span><div class="bar-track"><div class="bar-fill" style="left:${leftPct}%;right:${rightPct}%"></div></div><span class="val-high">${Math.round(temp)}°</span></div></div>`;
+    }
     return html``;
   }
 
@@ -525,6 +543,7 @@ export class MiniWeatherCard extends LitElement {
         border-radius: var(--ha-card-border-radius, 12px);
         height: 100%; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column;
         box-shadow: var(--ha-card-box-shadow, none); position: relative;
+        container-type: size;
       }
       .bg-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; border-radius: var(--ha-card-border-radius, 12px); }
       .bg-layer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; transition: background 1s ease; }
@@ -532,31 +551,30 @@ export class MiniWeatherCard extends LitElement {
       .bg-layer.dark { z-index: 2; }
       .history-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
       .content-layer { position: relative; z-index: 4; }
-      .container { padding: 16px; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; flex: 0 0 auto; margin-bottom: 10px; }
-      .temp-big { font-size: 3.5rem; font-weight: 200; line-height: 1; text-shadow: 0 1px 5px rgba(0,0,0,0.5); }
+      .container { padding: clamp(12px, 4cqi, 20px); height: 100%; display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; overflow: hidden; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; flex: 0 0 auto; margin-bottom: clamp(4px, 2cqi, 10px); }
+      .temp-big { font-size: clamp(2rem, 10cqi, 4rem); font-weight: 100; line-height: 1; text-shadow: 0 1px 5px rgba(0,0,0,0.5); white-space: nowrap; letter-spacing: -1px; overflow: hidden; }
       .header-right { display: flex; flex-direction: column; align-items: flex-end; text-shadow: 0 1px 5px rgba(0,0,0,0.5); }
-      .main-icon { --mdc-icon-size: 32px; margin-bottom: 4px; filter: drop-shadow(0 1px 5px rgba(0,0,0,0.5)); }
-      .hl-label { font-size: 0.9rem; font-weight: 500; opacity: 0.9; }
+      .main-icon { --mdc-icon-size: clamp(22px, 7cqi, 36px); margin-bottom: 4px; filter: drop-shadow(0 1px 5px rgba(0,0,0,0.5)); }
+      .hl-label { font-size: clamp(0.75rem, 3cqi, 1rem); font-weight: 300; opacity: 0.9; white-space: nowrap; }
       .forecast-list { display: flex; flex-direction: column; gap: 0; flex: 1 1 auto; overflow: hidden; justify-content: flex-start; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-      .row { display: grid; grid-template-columns: 50px 30px 1fr; align-items: center; font-size: 0.95rem; height: 32px; }
-      .day-name { font-weight: 600; opacity: 0.9; }
+      .row { display: grid; grid-template-columns: minmax(30px, 50px) 30px 1fr; align-items: center; font-size: clamp(0.75rem, 3cqi, 1rem); height: 28px; }
+      .day-name { font-weight: 400; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .icon-small { text-align: center; }
       .icon-small ha-icon { --mdc-icon-size: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)); }
       .bars { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
       .val-low { opacity: 0.6; width: 25px; text-align: right; }
-      .val-high { font-weight: 600; width: 25px; text-align: right; }
+      .val-high { font-weight: 500; width: 25px; text-align: right; }
       .bar-track { flex-grow: 1; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; position: relative; min-width: 50px; max-width: 100px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); }
-      .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; right: 0; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); opacity: 0.8; }
-      .hourly .temp-single { text-align: right; font-weight: 600; padding-right: 5px; }
-      .footer { margin-top: auto; padding-top: 10px; text-align: center; font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; flex: 0 0 auto; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+      .bar-fill { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 50%, #f5af19 100%); border-radius: 3px; opacity: 0.85; transition: left 0.4s ease, right 0.4s ease; }
+      .hourly .temp-single { text-align: right; font-weight: 500; padding-right: 5px; }
+      .footer { margin-top: auto; padding-top: 6px; text-align: center; font-size: clamp(0.6rem, 2cqi, 0.75rem); opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; flex: 0 0 auto; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .loading { text-align: center; font-size: 0.8rem; opacity: 0.5; padding: 10px; }
     `;
   }
 }
 if (!customElements.get("slick-minimal-weather-card")) {
   customElements.define("slick-minimal-weather-card", MiniWeatherCard);
-  console.info("%c slick-minimal-weather-card Registered", "color: green; font-weight: bold;");
 }
 
 class MiniWeatherCardEditor extends LitElement {

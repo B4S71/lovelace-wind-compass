@@ -152,6 +152,21 @@ export default [
       }),
       terser()
     ]
+  },
+  {
+    input: 'src/light-control-card.ts',
+    output: {
+      file: 'dist/light-control-card.js',
+      format: 'es',
+      sourcemap: true
+    },
+    plugins: [
+      resolve(),
+      typescript({
+        tsconfig: './tsconfig.json'
+      }),
+      terser()
+    ]
   }
 ];
 

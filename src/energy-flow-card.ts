@@ -1,10 +1,18 @@
 /**
  * Energy Flow Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 import { LitElement, html, css } from 'lit';
 import type { HomeAssistant, EnergyFlowCardConfig } from './types';
+
+const CARD_VERSION = "0.2.0";
+
+console.info(
+  `%c ENERGY-FLOW-CARD %c ${CARD_VERSION} `,
+  'color: white; background: #4caf50; font-weight: 700;',
+  'color: #4caf50; background: white; font-weight: 700;'
+);
 
 export class EnergyFlowCard extends LitElement {
   hass!: HomeAssistant;
@@ -303,7 +311,6 @@ export class EnergyFlowCard extends LitElement {
       :host {
         display: block;
         height: 100%;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         isolation: isolate;
       }
       ha-card {
@@ -315,6 +322,7 @@ export class EnergyFlowCard extends LitElement {
         overflow: hidden;
         position: relative;
         background: black; /* Fallback */
+        container-type: size;
       }
       
       .bg-layer {
@@ -328,13 +336,15 @@ export class EnergyFlowCard extends LitElement {
       }
       
       .content {
-        padding: 16px;
+        padding: clamp(12px, 4cqi, 20px);
         display: flex;
         flex-direction: column;
         height: 100%;
         box-sizing: border-box;
         position: relative;
         z-index: 1;
+        min-height: 0;
+        overflow: hidden;
       }
       
       /* Header */
@@ -342,31 +352,37 @@ export class EnergyFlowCard extends LitElement {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
+        margin-bottom: clamp(4px, 2cqi, 16px);
+        flex: 0 0 auto;
       }
       .title {
-        font-size: 1.1rem;
-        font-weight: 600;
+        font-size: clamp(0.85rem, 3cqi, 1.2rem);
+        font-weight: 400;
         opacity: 0.9;
         text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .status-badge {
-        font-size: 0.8rem;
-        font-weight: 700;
+        font-size: clamp(0.6rem, 2cqi, 0.8rem);
+        font-weight: 500;
         text-transform: uppercase;
         padding: 2px 8px;
         background: rgba(255,255,255,0.2);
         border-radius: 12px;
         backdrop-filter: blur(4px);
+        white-space: nowrap;
       }
 
       /* Main Stats Row */
       .main-stats {
         display: flex;
         justify-content: space-between;
-        align-items: flex-end; /* Align bottom to keep hierarchy */
+        align-items: flex-end;
         flex-grow: 1;
-        margin-bottom: 16px;
+        margin-bottom: clamp(4px, 2cqi, 16px);
+        min-height: 0;
       }
 
       .stat-block {
@@ -375,25 +391,25 @@ export class EnergyFlowCard extends LitElement {
         align-items: center;
         flex: 1;
         opacity: 0.7;
-        transition: opacity 0.3s ease, transform 0.3s ease;
+        transition: opacity 0.3s ease;
+        min-width: 0;
       }
       .stat-block.active, .stat-block.home {
         opacity: 1;
       }
       .stat-block.home {
-        flex: 1.5; /* Home is wider */
-        transform: translateY(-10px); /* Lift up slightly */
+        flex: 1.5;
       }
 
       .icon-circle {
-        width: 36px;
-        height: 36px;
+        width: clamp(24px, 8cqi, 36px);
+        height: clamp(24px, 8cqi, 36px);
         border-radius: 50%;
         background: rgba(255,255,255,0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 8px;
+        margin-bottom: clamp(2px, 1cqi, 8px);
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       }
       .icon-circle svg {
@@ -402,28 +418,29 @@ export class EnergyFlowCard extends LitElement {
       }
       
       .home-icon {
-        width: 48px;
-        height: 48px;
+        width: clamp(32px, 10cqi, 48px);
+        height: clamp(32px, 10cqi, 48px);
         background: rgba(255,255,255,0.25);
       }
       .home-icon svg { width: 28px; height: 28px; }
 
       .stat-value {
-        font-size: 1.1rem;
-        font-weight: 600;
+        font-size: clamp(0.85rem, 3.5cqi, 1.2rem);
+        font-weight: 400;
         line-height: 1.1;
         text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        white-space: nowrap;
       }
       .stat-value.big {
-        font-size: 2.2rem;
-        font-weight: 700;
+        font-size: clamp(1.4rem, 7cqi, 2.5rem);
+        font-weight: 200;
         margin-bottom: 2px;
         letter-spacing: -0.5px;
       }
       
       .stat-label {
-        font-size: 0.8rem;
-        font-weight: 500;
+        font-size: clamp(0.6rem, 2cqi, 0.8rem);
+        font-weight: 300;
         opacity: 0.8;
         margin-top: 4px;
       }
@@ -432,8 +449,9 @@ export class EnergyFlowCard extends LitElement {
       .battery-section {
         background: rgba(0,0,0,0.2);
         border-radius: 10px;
-        padding: 10px 12px;
+        padding: clamp(6px, 2cqi, 10px) clamp(8px, 2cqi, 12px);
         margin-top: auto;
+        flex: 0 0 auto;
       }
       .batt-info {
         display: flex;
@@ -441,20 +459,20 @@ export class EnergyFlowCard extends LitElement {
         gap: 8px;
         margin-bottom: 6px;
         font-size: 0.9rem;
-        font-weight: 600;
+        font-weight: 400;
       }
       .batt-icon svg { width: 16px; height: 16px; opacity: 0.8; }
       .batt-power {
         margin-left: auto;
-        font-weight: 400;
+        font-weight: 300;
         opacity: 0.8;
         font-size: 0.85rem;
       }
       .batt-state {
-        font-size: 0.75rem;
+        font-size: clamp(0.6rem, 2cqi, 0.75rem);
         opacity: 0.6;
         text-transform: uppercase;
-        font-weight: 700;
+        font-weight: 500;
       }
 
       .batt-bar-bg {
@@ -473,7 +491,7 @@ export class EnergyFlowCard extends LitElement {
 
       /* Tiny Mode */
       ha-card.tiny .content {
-        padding: 4px;
+        padding: 8px;
         justify-content: center;
         align-items: center;
         position: relative;
@@ -563,23 +581,22 @@ export class EnergyFlowCard extends LitElement {
 
 if (!customElements.get("slick-energy-flow-card")) {
   customElements.define("slick-energy-flow-card", EnergyFlowCard);
-  console.info("%c slick-energy-flow-card Registered", "color: green; font-weight: bold;");
 }
 
 // Editor Class
 export class EnergyFlowCardEditor extends LitElement {
-  hass: any;
-  _config: any;
+  hass!: HomeAssistant;
+  _config!: EnergyFlowCardConfig;
 
   static get properties() {
     return {
-      hass: {},
-      _config: {},
+      hass: { attribute: false },
+      _config: { state: true },
     };
   }
 
-  setConfig(config: any) { this._config = config; }
-  _valueChanged(ev: any) { 
+  setConfig(config: EnergyFlowCardConfig) { this._config = config; }
+  _valueChanged(ev: CustomEvent) { 
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: { ...this._config, ...ev.detail.value } }, bubbles: true, composed: true })); 
   }
   render() {

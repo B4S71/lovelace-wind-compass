@@ -1,6 +1,6 @@
 /**
  * Energy Flow Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 import { LitElement } from 'lit';
 import type { HomeAssistant, EnergyFlowCardConfig } from './types';
@@ -41,14 +41,18 @@ export declare class EnergyFlowCard extends LitElement {
     static get styles(): import("lit").CSSResult;
 }
 export declare class EnergyFlowCardEditor extends LitElement {
-    hass: any;
-    _config: any;
+    hass: HomeAssistant;
+    _config: EnergyFlowCardConfig;
     static get properties(): {
-        hass: {};
-        _config: {};
+        hass: {
+            attribute: boolean;
+        };
+        _config: {
+            state: boolean;
+        };
     };
-    setConfig(config: any): void;
-    _valueChanged(ev: any): void;
+    setConfig(config: EnergyFlowCardConfig): void;
+    _valueChanged(ev: CustomEvent): void;
     render(): import("lit-html").TemplateResult<1>;
 }
 //# sourceMappingURL=energy-flow-card.d.ts.map

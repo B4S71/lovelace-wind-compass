@@ -1,6 +1,6 @@
 /**
  * Person Card
- * @version 0.1.0
+ * @version 0.2.0
  */
 import { LitElement } from 'lit';
 import type { HomeAssistant, PersonCardConfig } from './types';
@@ -21,7 +21,6 @@ export declare class PersonCard extends LitElement {
         people: string[];
         layout: string;
     };
-    constructor();
     getCardSize(): number;
     setConfig(config: PersonCardConfig): void;
     render(): import("lit-html").TemplateResult<1>;
