@@ -351,7 +351,7 @@ export class LightControlCard extends LitElement {
                 <div class="slider-control" 
                      @pointerdown=${(e: PointerEvent) => this._handleSliderDown(e, entityId, 'position', position)}
                 >
-                     <div class="slider-fill" style="width: ${position}%"></div>
+                     <div class="slider-fill" style="width: calc((100% - 50px) * ${position / 100} + 46px)"></div>
                      <div class="slider-handle" style="left: calc((100% - 42px - 8px) * ${position / 100} + 4px)"></div>
                      <div class="slider-label">Pos: ${position}%</div>
                 </div>
@@ -361,7 +361,7 @@ export class LightControlCard extends LitElement {
                 <div class="slider-control" 
                      @pointerdown=${(e: PointerEvent) => this._handleSliderDown(e, entityId, 'tilt', tilt)}
                 >
-                     <div class="slider-fill" style="width: ${tilt}%"></div>
+                     <div class="slider-fill" style="width: calc((100% - 50px) * ${tilt / 100} + 46px)"></div>
                      <div class="slider-handle" style="left: calc((100% - 42px - 8px) * ${tilt / 100} + 4px)"></div>
                      <div class="slider-label">Tilt: ${tilt}%</div>
                 </div>
@@ -499,7 +499,7 @@ export class LightControlCard extends LitElement {
       .slider-fill {
           position: absolute;
           top: 0; left: 0; bottom: 0;
-          background: rgba(255,255,255,0.15); /* Subtle fill */
+          background: linear-gradient(to right, rgba(255,255,255,0.25) calc(100% - 42px), rgba(255,255,255,0) 100%);
           border-radius: 12px 0 0 12px;
           pointer-events: none;
       }
