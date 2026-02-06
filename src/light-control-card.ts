@@ -5,6 +5,7 @@
 
 import { LitElement, html, css, PropertyValues } from 'lit';
 import type { HomeAssistant, LightControlCardConfig } from './types';
+import './light-control-card-editor';
 
 const CARD_VERSION = "0.1.0";
 
