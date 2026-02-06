@@ -22,8 +22,12 @@ export class LightControlCard extends LitElement {
     return {
       hass: { attribute: false },
       config: { state: true },
+      _interacting: { state: true }
     };
   }
+
+  // Internal state
+  _interacting = false;
 
   static getConfigElement() {
     return document.createElement("slick-light-control-card-editor");
@@ -65,32 +69,10 @@ export class LightControlCard extends LitElement {
     return false;
   }
 
-  private _toggleLight() {
+  private _toggleLight(e?: Event) {
+    if (e) e.stopPropagation();
     this.hass.callService('light', 'toggle', {
       entity_id: this.config.entity
-    });
-  }
-
-  private _setBrightness(e: Event) {
-    const value = (e.target as HTMLInputElement).value;
-    this.hass.callService('light', 'turn_on', {
-      entity_id: this.config.entity,
-      brightness_pct: value
-    });
-  }
-
-  private _setTemp(e: Event) {
-    const value = (e.target as HTMLInputElement).value;
-    // Value coming from slider is in Kelvin (warm to cool) or mireds? 
-    // Let's use Kelvin for UI (Check what HA supports) or simpler: Mireds.
-    // Slider: Left (Cool) -> Right (Warm) or vice versa.
-    // Kelvin: High (Cool) -> Low (Warm).
-    // Mireds: Low (Cool) -> High (Warm).
-    
-    // Let's assume the slider is Mireds for direct passing
-    this.hass.callService('light', 'turn_on', {
-      entity_id: this.config.entity,
-      color_temp: value
     });
   }
 
@@ -98,6 +80,71 @@ export class LightControlCard extends LitElement {
     this.hass.callService('cover', command, {
       entity_id: entityId
     });
+  }
+
+  private _handlePointerDown(e: PointerEvent) {
+    // Ignore if clicking buttons or controls
+    const path = e.composedPath();
+    for (const el of path) {
+      if ((el as HTMLElement).classList?.contains('control-btn') || 
+          (el as HTMLElement).tagName === 'HA-SWITCH' ||
+          (el as HTMLElement).classList?.contains('icon-container')) {
+        return;
+      }
+    }
+    
+    this._interacting = true;
+    const card = this.shadowRoot?.querySelector('ha-card');
+    if (card) {
+      card.setPointerCapture(e.pointerId);
+    }
+  }
+
+  private _handlePointerUp(e: PointerEvent) {
+    if (!this._interacting) return;
+    this._interacting = false;
+    
+    const card = this.shadowRoot?.querySelector('ha-card');
+    if (card) {
+      card.releasePointerCapture(e.pointerId);
+      this._applyLightState(e, card);
+    }
+  }
+
+  private _handlePointerMove(_e: PointerEvent) {
+    // Optional: Real-time update of local state if we want to show a "cursor" or "preview"
+    // For now, just the concept of interacting is enough to show the gradient map
+  }
+
+  private _applyLightState(e: PointerEvent, card: Element) {
+    const rect = card.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+    const stateObj = this.hass.states[this.config.entity];
+    if (!stateObj) return;
+
+    // Y -> Brightness (Up=100%, Down=0%)
+    const brightnessPct = Math.round((1 - y) * 100);
+
+    // X -> Color Temp (Left=Cold/MinMireds, Right=Warm/MaxMireds)
+    const minMireds = stateObj.attributes.min_mireds || 153;
+    const maxMireds = stateObj.attributes.max_mireds || 500;
+    const colorTemp = Math.round(minMireds + (x * (maxMireds - minMireds)));
+
+    const serviceData: any = {
+      entity_id: this.config.entity,
+      brightness_pct: Math.max(1, brightnessPct) // Don't turn off, just dim
+    };
+
+    // Only apply color temp if supported
+    // Check if bit 2 (color_temp) is supported or color_mode says so. 
+    // Assuming if min_mireds is present, it supports it.
+    if (stateObj.attributes.min_mireds) {
+        serviceData.color_temp = colorTemp;
+    }
+
+    this.hass.callService('light', 'turn_on', serviceData);
   }
 
   render() {
@@ -111,8 +158,6 @@ export class LightControlCard extends LitElement {
     const brightness = stateObj.attributes.brightness ? Math.round((stateObj.attributes.brightness / 255) * 100) : 0;
     
     // Color Temp Logic
-    // HA uses mireds (min_mireds to max_mireds)
-    // Low mireds = Cool, High mireds = Warm
     const minMireds = stateObj.attributes.min_mireds || 153;
     const maxMireds = stateObj.attributes.max_mireds || 500;
     const currentMireds = stateObj.attributes.color_temp || Math.round((minMireds + maxMireds) / 2);
@@ -120,39 +165,19 @@ export class LightControlCard extends LitElement {
     const covers = this.config.covers || [];
 
     // Background Gradient Calculation
-    // If On: Warm/Cool gradient based on temp? Or yellowish.
-    // If Off: Dark Grey.
     let bgStyle = 'background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);'; // Off state
-    if (isOn) {
-        // Simple approximation: 
-        // Cool (low mireds) -> Blueish White
-        // Warm (high mireds) -> Orangeish
-        
+
+    if (this._interacting) {
+      // 2D Map: X=Temp (Blue->Orange), Y=Bright (White->Black)
+      bgStyle = `background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), linear-gradient(to right, rgb(166, 209, 255) 0%, rgb(255, 160, 0) 100%);`;
+    } else if (isOn) {
         // Normalize mireds 0..1
         const ratio = (currentMireds - minMireds) / (maxMireds - minMireds);
-        // 0 (Cool) -> 1 (Warm)
-        
-        // Colors
-        // Cool: #e0f7fa (Cyan 50)
-        // Warm: #fff3e0 (Orange 50) -> #ffe0b2
-        
-        // Let's make it more vibrant for the card bg
-        // Cool: #2980b9
-        // Warm: #f39c12
-        
-        // We can interpolate or just pick. Let's interpolate roughly via CSS if possible, but JS is easier.
-        // Let's stick to a Gold/Yellow glow for general "On" and tweak slightly.
-        // Or actually visually represent the temp.
         
         if (stateObj.attributes.rgb_color) {
             const [r, g, b] = stateObj.attributes.rgb_color;
             bgStyle = `background: linear-gradient(135deg, rgba(${r},${g},${b},0.8) 0%, rgba(${r},${g},${b},0.4) 100%);`;
         } else {
-             // Fallback for white spectrum lights
-             // More mireds = warmer (orange). Less mireds = cooler (blue/white).
-             // Cool: rgb(200, 220, 255)
-             // Warm: rgb(255, 200, 150)
-             // Interpolation logic roughly:
              const r = 200 + (55 * ratio); 
              const g = 220 - (20 * ratio);
              const b = 255 - (105 * ratio);
@@ -161,8 +186,14 @@ export class LightControlCard extends LitElement {
     }
 
     return html`
-      <ha-card style="${bgStyle}">
-        <div class="content">
+      <ha-card 
+        style="${bgStyle}"
+        @pointerdown=${this._handlePointerDown}
+        @pointerup=${this._handlePointerUp}
+        @pointercancel=${this._handlePointerUp}
+        @pointermove=${this._handlePointerMove}
+      >
+        <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; pointer-events: ${this._interacting ? 'none' : 'auto'}">
             <!-- HEADER -->
             <div class="header">
                 <div class="icon-container" @click=${this._toggleLight}>
@@ -174,40 +205,15 @@ export class LightControlCard extends LitElement {
                 </div>
                  <ha-switch
                     .checked=${isOn}
+                    @click=${(e: Event) => e.stopPropagation()}
                     @change=${this._toggleLight}
                 ></ha-switch>
             </div>
 
-            <!-- CONTROLS -->
-            ${isOn ? html`
-            <div class="sliders">
-                <!-- BRIGHTNESS -->
-                <div class="slider-group">
-                    <div class="slider-label"><ha-icon icon="mdi:brightness-6"></ha-icon></div>
-                    <input type="range" 
-                        min="1" max="100" 
-                        .value=${brightness} 
-                        @change=${this._setBrightness}
-                        class="slider brightness-slider">
-                </div>
-
-                <!-- TEMP (if supported) -->
-                ${stateObj.attributes.supported_features !== undefined /* simplified check, real logic checks bitmask or color_mode */ ? html`
-                <div class="slider-group">
-                    <div class="slider-label"><ha-icon icon="mdi:thermometer"></ha-icon></div>
-                    <input type="range" 
-                        min="${minMireds}" max="${maxMireds}" 
-                        .value=${currentMireds} 
-                        @change=${this._setTemp}
-                        class="slider temp-slider">
-                </div>` : ''}
-            </div>
-            ` : ''}
-
             <!-- COVERS -->
             ${covers.length > 0 ? html`
                 <div class="covers-section">
-                    ${covers.map(cover => this._renderCover(cover))}
+                    ${covers.map((cover: string) => this._renderCover(cover))}
                 </div>
             ` : ''}
         </div>
@@ -243,18 +249,27 @@ export class LightControlCard extends LitElement {
   static get styles() {
     return css`
       :host {
+
         display: block;
       }
       ha-card {
         color: white;
         overflow: hidden;
-        transition: all 0.5s ease;
+        transition: background 0.1s linear;
         padding: 16px;
+        touch-action: none;
+        user-select: none;
+        position: relative;
+        cursor: grab;
+      }
+      ha-card:active {
+        cursor: grabbing;
       }
       .content {
         display: flex;
         flex-direction: column;
         gap: 20px;
+        transition: opacity 0.2s ease-in-out;
       }
       
       /* HEADER */
@@ -291,47 +306,6 @@ export class LightControlCard extends LitElement {
         font-size: 0.9rem;
       }
 
-      /* SLIDERS */
-      .sliders {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        background: rgba(0,0,0,0.2);
-        padding: 16px;
-        border-radius: 12px;
-      }
-      .slider-group {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .slider {
-        -webkit-appearance: none;
-        width: 100%;
-        height: 6px;
-        border-radius: 3px;
-        background: rgba(255, 255, 255, 0.3);
-        outline: none;
-        transition: opacity .2s;
-      }
-      .slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #ffffff;
-        cursor: pointer;
-        border: 2px solid rgba(0,0,0,0.1);
-      }
-      
-      .brightness-slider::-webkit-slider-thumb {
-         box-shadow: 0 0 10px rgba(255,255,255,0.8);
-      }
-      
-      .temp-slider {
-        background: linear-gradient(90deg, #a7c5eb 0%, #ffcc80 100%);
-      }
 
       /* COVERS */
       .covers-section {

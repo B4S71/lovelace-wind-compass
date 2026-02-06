@@ -14,7 +14,11 @@ export declare class LightControlCard extends LitElement {
         config: {
             state: boolean;
         };
+        _interacting: {
+            state: boolean;
+        };
     };
+    _interacting: boolean;
     static getConfigElement(): HTMLElement;
     static getStubConfig(): {
         type: string;
@@ -25,9 +29,11 @@ export declare class LightControlCard extends LitElement {
     setConfig(config: LightControlCardConfig): void;
     shouldUpdate(changedProps: PropertyValues): boolean;
     private _toggleLight;
-    private _setBrightness;
-    private _setTemp;
     private _controlCover;
+    private _handlePointerDown;
+    private _handlePointerUp;
+    private _handlePointerMove;
+    private _applyLightState;
     render(): import("lit-html").TemplateResult<1>;
     private _renderCover;
     static get styles(): import("lit").CSSResult;
