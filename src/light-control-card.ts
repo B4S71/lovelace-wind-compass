@@ -94,7 +94,7 @@ export class LightControlCard extends LitElement {
 
       if (height < 100) {
           this._layout = 'compact';
-      } else if (height < 200 && width >= 400) {
+      } else if (height < 200 && width >= 300) {
           this._layout = 'medium';
       } else if (height < 200) {
           this._layout = 'small';
