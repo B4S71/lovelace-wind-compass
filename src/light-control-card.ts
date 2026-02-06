@@ -480,11 +480,11 @@ export class LightControlCard extends LitElement {
 
     // Calculate visible covers based on available height
     // Constants from CSS
-    const PADDING_V = 32; // 16 top + 16 bottom (.layout-container)
+    const PADDING_V = 24; // 12 top + 12 bottom (.layout-container)
     const HEADER_H = 48; // .header height (approx)
-    const GAP = 20; // .content gap
-    const COVER_SECTION_PAD = 28; // 12 top + 16 bottom (.covers-section internal padding)
-    const COVER_ROW_H = 50; // .slider-control height
+    const GAP = 12; // .content gap
+    const COVER_SECTION_PAD = 24; // 12 top + 12 bottom (.covers-section internal padding)
+    const COVER_ROW_H = 42; // .slider-control height
     const COVER_GAP = 8; // .covers-section gap
 
     let visibleCoversCount = covers.length;
@@ -653,7 +653,7 @@ export class LightControlCard extends LitElement {
       }
 
       .layout-container {
-         padding: 16px;
+         padding: 12px;
          width: 100%;
          height: 100%;
          box-sizing: border-box;
@@ -664,7 +664,7 @@ export class LightControlCard extends LitElement {
       .layout-container.medium {
           flex-direction: row;
           align-items: center;
-          gap: 24px;
+          gap: 16px;
       }
 
       ha-card:active {
@@ -675,13 +675,14 @@ export class LightControlCard extends LitElement {
         flex-direction: column;
         height: 100%;
         justify-content: space-between;
-        gap: 20px;
+        gap: 12px;
         pointer-events: none; /* Allow events to pass through wrapper, but children re-enable if needed */
         flex: 1;
+        min-height: 0; /* Allow shrinking */
       }
       .layout-container.medium .content {
           flex-direction: row;
-          gap: 24px;
+          gap: 16px;
           justify-content: flex-start;
           align-items: center;
       }
@@ -694,16 +695,19 @@ export class LightControlCard extends LitElement {
       .header {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         flex: 0 0 auto; /* Do not grow, stay compact */
+        width: 100%; /* Ensure it takes width */
       }
       /* In medium layout, header doesn't need to flex-grow heavily if side-by-side */
       .layout-container.medium .header {
           flex: 0 0 auto;
-          min-width: 200px;
+          min-width: 180px;
+          width: auto;
       }
 
       .icon-container {
+        flex: 0 0 auto; /* Never shrink */
         background: rgba(255, 255, 255, 0.2);
         border-radius: 50%;
         width: 48px;
@@ -760,10 +764,9 @@ export class LightControlCard extends LitElement {
         padding-top: 12px;
         /* Ensure distinct visual area */
         background: rgba(0,0,0,0.2);
-        margin: -16px;
+        margin: -12px;
         margin-top: 0;
-        padding: 16px;
-        padding-top: 12px;
+        padding: 12px;
         backdrop-filter: blur(10px);
       }
       /* In medium layout, covers are on the side, remove top border/margins */
@@ -780,7 +783,7 @@ export class LightControlCard extends LitElement {
       .cover-row {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         /* Removed background for row, using slider backgrounds */
       }
       .cover-info {
@@ -788,17 +791,19 @@ export class LightControlCard extends LitElement {
         align-items: center;
         justify-content: center;
         width: 32px;
+        flex: 0 0 auto;
       }
       .cover-sliders {
           flex: 1;
           display: flex;
           flex-direction: row;
-          gap: 12px;
+          gap: 8px;
+          min-width: 0; /* Allow shrinking */
       }
       
       .slider-control {
           position: relative;
-          height: 50px; /* Match vacuum card (42px handle + 4px top/bottom) */
+          height: 42px; /* Match vacuum card (34px handle + 4px top/bottom) */
           border-radius: 12px;
           background: rgba(0,0,0,0.3); /* Dark track */
           box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); /* Pressed in */
@@ -809,6 +814,7 @@ export class LightControlCard extends LitElement {
           align-items: center;
           /* No padding, we absolute position handle */
           overflow: hidden; /* Contain fill */
+          min-width: 80px; /* Force minimum width, else wrap? no wrap logic yet */
       }
       .slider-control:active {
           cursor: grabbing;
@@ -820,7 +826,7 @@ export class LightControlCard extends LitElement {
       .slider-fill {
           position: absolute;
           top: 0; left: 0; bottom: 0;
-          background: linear-gradient(to right, rgba(255,255,255,0.25) calc(100% - 42px), rgba(255,255,255,0) 100%);
+          background: linear-gradient(to right, rgba(255,255,255,0.25) calc(100% - 34px), rgba(255,255,255,0) 100%);
           border-radius: 12px 0 0 12px;
           pointer-events: none;
       }
@@ -828,7 +834,7 @@ export class LightControlCard extends LitElement {
           position: absolute;
           top: 4px;
           bottom: 4px;
-          width: 42px; /* Fixed width */
+          width: 34px; /* Fixed width */
           
           /* Glass Style */
           background: rgba(255, 255, 255, 0.15);
