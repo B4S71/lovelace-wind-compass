@@ -19,21 +19,42 @@ export class LightControlCard extends LitElement {
   hass!: HomeAssistant;
   config!: LightControlCardConfig;
 
+  // ─── Layout Constants (single source of truth) ───
+  // These match CSS values exactly. Change here AND in CSS together.
+  static readonly SIZES = {
+    ICON: 40,            // .icon-container width/height
+    HEADER_GAP: 12,      // .header gap
+    HEADER_MIN_W: 120,   // Minimum header text width (icon + gap + text)
+    COVER_ROW_H: 42,     // .slider-control height
+    COVER_ICON_W: 40,    // .cover-info width + gap
+    COVER_GAP: 8,        // gap between cover rows
+    COVER_SECTION_PAD: 24,// covers-section top+bottom padding (12+12)
+    CONTENT_GAP: 8,      // .content gap between header and covers
+    PAD_H: 10,           // .layout-container horizontal padding per side
+    PAD_V: 5,            // .layout-container vertical padding per side
+    SLIDER_MIN_W: 100,   // Minimum useful slider width
+  } as const;
+
   static get properties() {
     return {
       hass: { attribute: false },
       config: { state: true },
       _interacting: { state: true },
       _cursorPos: { state: true },
-      _layout: { state: true },
-      _height: { state: true }
+      _computed: { state: true },
     };
   }
 
+  // ─── Computed Layout State (set by _updateLayout, read by render) ───
+  _computed: {
+    mode: 'compact' | 'vertical' | 'horizontal';
+    showCovers: boolean;
+    visibleCovers: number;
+    supports2D: boolean;
+  } = { mode: 'vertical', showCovers: false, visibleCovers: 0, supports2D: false };
+
   // Internal state
   _interacting = false;
-  _layout: 'compact' | 'small' | 'medium' | 'large' = 'large';
-  _height = 0;
   _resizeObserver: ResizeObserver | null = null;
   _cursorPos = { x: 0, y: 0 };
   _activeSlider: { 
@@ -88,44 +109,124 @@ export class LightControlCard extends LitElement {
       }
   }
 
+  /**
+   * Deterministic layout engine.
+   * Instead of guessing modes, we measure what physically fits.
+   *
+   * Decision order:
+   *   1. Can the header even fit?  → compact
+   *   2. How many cover rows fit vertically vs horizontally?
+   *   3. Which orientation gives sliders more width?
+   *   4. Pick the winner.
+   */
   private _updateLayout(width: number, height: number) {
-      this._height = height;
+      const S = LightControlCard.SIZES;
+      const covers = this.config?.covers || [];
+      const numCovers = covers.length;
 
-      // Respect manual overwrite
-      if (this.config.layout && this.config.layout !== 'auto') {
-          this._layout = this.config.layout;
+      // Respect manual override (map old names to new modes)
+      if (this.config?.layout && this.config.layout !== 'auto') {
+          const manualMap: Record<string, 'compact' | 'vertical' | 'horizontal'> = {
+              compact: 'compact', small: 'vertical', medium: 'horizontal', large: 'vertical'
+          };
+          const mode = manualMap[this.config.layout] || 'vertical';
+          this._computed = {
+              mode,
+              showCovers: mode !== 'compact' && numCovers > 0,
+              visibleCovers: mode === 'compact' ? 0 : numCovers,
+              supports2D: mode !== 'compact',
+          };
           return;
       }
 
-      // 1. Single Row (~50-80px) -> Compact
-      if (height < 90) {
-          this._layout = 'compact';
+      // ─── Available inner dimensions ───
+      const innerW = width - S.PAD_H * 2;
+      const innerH = height - S.PAD_V * 2;
+      const headerH = S.ICON; // Header row height = icon height
+
+      // ─── 1. Compact: header doesn't fit vertically ───
+      if (innerH < headerH) {
+          this._computed = { mode: 'compact', showCovers: false, visibleCovers: 0, supports2D: false };
           return;
       }
 
-      // 2. Calculate available space for covers in each layout mode
-      const HEADER_WIDTH_IN_LANDSCAPE = 180; // Approx width of header in side-by-side
-      const MIN_HEIGHT_FOR_VERTICAL = 200;   // Min height to allow vertical layout
-      
-      // Space available for cover sliders:
-      const landscapeSliderWidth = width - HEADER_WIDTH_IN_LANDSCAPE - 40; // subtract header + gaps
-      const verticalSliderWidth = width - 20; // Full width minus padding
-      
-      // 3. Prefer vertical (large) if:
-      //    - Card is tall enough (3+ rows), AND
-      //    - Vertical layout gives more horizontal space for sliders
-      if (height >= MIN_HEIGHT_FOR_VERTICAL && verticalSliderWidth > landscapeSliderWidth) {
-          this._layout = 'large';
-      } else if (width >= 400 && height < 350) {
-          // Wide but not tall enough for vertical -> Landscape (Medium)
-          this._layout = 'medium';
-      } else if (height < 220) {
-          // 2-3 Rows High, Narrow -> Vertical Stack (Small)
-          this._layout = 'small';
+      // ─── 2. Calculate cover capacity for VERTICAL layout ───
+      // [Header] gap [CoverSection: pad + rows + pad]
+      const vertAvailForCovers = innerH - headerH - S.CONTENT_GAP - S.COVER_SECTION_PAD;
+      const vertFitCovers = vertAvailForCovers >= S.COVER_ROW_H
+          ? Math.floor((vertAvailForCovers + S.COVER_GAP) / (S.COVER_ROW_H + S.COVER_GAP))
+          : 0;
+      const vertSliderW = innerW - S.COVER_ICON_W; // Full card width minus icon
+
+      // ─── 3. Calculate cover capacity for HORIZONTAL layout ───
+      // Horizontal: [Header | gap | CoverSection]
+      const horizGap = 12;
+      const headerMinW = S.ICON + S.HEADER_GAP + S.HEADER_MIN_W;
+      const horizAvailW = innerW - headerMinW - horizGap;
+      const horizSliderW = horizAvailW - S.COVER_ICON_W;
+      const horizAvailH = innerH; // Full height available for covers
+      const horizFitCovers = horizSliderW >= S.SLIDER_MIN_W && horizAvailH >= S.COVER_ROW_H
+          ? Math.floor((horizAvailH + S.COVER_GAP) / (S.COVER_ROW_H + S.COVER_GAP))
+          : 0;
+
+      // ─── 4. Decision: pick the layout that gives the best result ───
+      if (numCovers === 0) {
+          // No covers → always vertical, simple card
+          this._computed = {
+              mode: 'vertical',
+              showCovers: false,
+              visibleCovers: 0,
+              supports2D: innerH >= headerH + 40, // Need some room for 2D drag
+          };
+          return;
+      }
+
+      // Can either layout show any covers at all?
+      const vertShow = Math.min(numCovers, vertFitCovers);
+      const horizShow = Math.min(numCovers, horizFitCovers);
+
+      if (vertShow === 0 && horizShow === 0) {
+          // Neither layout can show covers
+          this._computed = {
+              mode: 'vertical',
+              showCovers: false,
+              visibleCovers: 0,
+              supports2D: innerH >= headerH + 40,
+          };
+          return;
+      }
+
+      // Both can show covers → prefer the one with wider sliders.
+      // If same slider count, prefer vertical (sliders get full width).
+      let bestMode: 'vertical' | 'horizontal';
+      let bestCount: number;
+
+      if (vertShow >= horizShow && vertSliderW >= S.SLIDER_MIN_W) {
+          // Vertical shows same or more covers AND sliders are wide enough
+          bestMode = 'vertical';
+          bestCount = vertShow;
+      } else if (horizShow > vertShow) {
+          // Horizontal shows more covers
+          bestMode = 'horizontal';
+          bestCount = horizShow;
+      } else if (horizSliderW > vertSliderW) {
+          // Horizontal gives wider sliders
+          bestMode = 'horizontal';
+          bestCount = horizShow;
       } else {
-          // Fallback to Large for other tall cases
-          this._layout = 'large';
+          // Default to vertical
+          bestMode = 'vertical';
+          bestCount = vertShow;
       }
+
+      this._computed = {
+          mode: bestMode,
+          showCovers: bestCount > 0,
+          visibleCovers: bestCount,
+          supports2D: bestMode === 'vertical'
+              ? innerH >= headerH + 40
+              : true, // Horizontal always has room in the header area
+      };
   }
 
   static getConfigElement() {
@@ -150,10 +251,6 @@ export class LightControlCard extends LitElement {
 
   shouldUpdate(changedProps: PropertyValues) {
     if (changedProps.has('config')) {
-        // Force layout update if config layout changes
-        if (this.config.layout && this.config.layout !== 'auto') {
-            this._layout = this.config.layout;
-        }
         return true;
     }
     
@@ -204,7 +301,7 @@ export class LightControlCard extends LitElement {
             this._clickTimer = null;
         }
 
-        if (this._layout === 'compact' && this.config.covers && this.config.covers.length > 0) {
+        if (this._computed.mode === 'compact' && this.config.covers && this.config.covers.length > 0) {
              this._openMoreInfo(this.config.covers[0]);
              // Cancel interaction/long-press
              if (this._longPressTimer) clearTimeout(this._longPressTimer);
@@ -236,9 +333,8 @@ export class LightControlCard extends LitElement {
   private _startInteraction() {
      this._longPressTimer = null;
 
-     // Mode Check: 'compact' and 'small' DO NOT support 2D drag
-     // Instead, they open more-info
-     if (this._layout === 'compact' || this._layout === 'small') {
+     // If current layout doesn't support 2D drag, open more-info instead
+     if (!this._computed.supports2D) {
          this._openMoreInfo(this.config.entity);
          this._pendingPointerId = null;
          return;
@@ -507,60 +603,20 @@ export class LightControlCard extends LitElement {
         }
     }
 
-    const layoutClass = this._layout || 'large';
-
-    // Calculate visible covers based on available height
-    // Constants from CSS
-    const PADDING_V = 10; // 5 top + 5 bottom (.layout-container)
-    const HEADER_H = 40; // .header height (approx, icon is 40px)
-    const GAP = 8; // .content gap
-    const COVER_SECTION_PAD = 24; // 12 top + 12 bottom (.covers-section internal padding)
-    const COVER_ROW_H = 42; // .slider-control height
-    const COVER_GAP = 8; // .covers-section gap
-
-    let visibleCoversCount = covers.length;
-
-    if (this._height > 0) {
-        let availableForCovers = 0;
-        
-        if (layoutClass === 'medium') {
-            // Medium: Side-by-Side. Covers take full height minus container padding
-            // Covers section padding is 0 in medium
-            availableForCovers = this._height - PADDING_V;
-            // Calculation: (Rows * 50) + ((Rows-1) * 8) <= available
-            // 58*R - 8 <= avail -> 58*R <= avail + 8 -> R <= (avail + 8)/58
-            visibleCoversCount = Math.floor((availableForCovers + COVER_GAP) / (COVER_ROW_H + COVER_GAP));
-        } else {
-            // Vertical Stack
-            // Total = PADDING_V + HEADER_H + GAP + COVER_SECTION_PAD + (Rows...);
-            const usedByHeader = PADDING_V + HEADER_H + GAP + COVER_SECTION_PAD;
-            availableForCovers = this._height - usedByHeader;
-            
-            if (availableForCovers < COVER_ROW_H) {
-                visibleCoversCount = 0;
-            } else {
-                visibleCoversCount = Math.floor((availableForCovers + COVER_GAP) / (COVER_ROW_H + COVER_GAP));
-            }
-        }
-    }
-    
-    // Ensure we don't show more than configured
-    visibleCoversCount = Math.max(0, Math.min(covers.length, visibleCoversCount));
+    const { mode, showCovers, visibleCovers } = this._computed;
 
     return html`
       <ha-card 
-        class="${layoutClass}"
+        class="mode-${mode}"
         style="${bgStyle}"
         @pointerdown=${this._handlePointerDown}
         @pointerup=${this._handlePointerUp}
         @pointercancel=${this._handlePointerUp}
         @pointermove=${this._handlePointerMove}
       >
-        <!-- LAYOUT CONTAINER -->
-        <div class="layout-container ${layoutClass}">
-            
-            <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; transition: opacity 0.2s">
-                <!-- HEADER -->
+        <div class="layout mode-${mode}">
+            <div class="content" style="opacity: ${this._interacting ? '0' : '1'}; transition: opacity 0.15s">
+                <!-- HEADER (always visible) -->
                 <div class="header">
                     <div class="icon-container" @click=${this._toggleLight}>
                         <ha-icon icon="${stateObj.attributes.icon || (isOn ? 'mdi:lightbulb-on' : 'mdi:lightbulb')}"></ha-icon>
@@ -571,10 +627,10 @@ export class LightControlCard extends LitElement {
                     </div>
                 </div>
 
-                <!-- COVERS (Hidden in compact or if no space) -->
-                ${covers.length > 0 && layoutClass !== 'compact' && visibleCoversCount > 0 ? html`
+                <!-- COVERS (shown only if computed layout says they fit) -->
+                ${showCovers ? html`
                     <div class="covers-section" @pointerdown=${(e: Event) => e.stopPropagation()}>
-                        ${covers.slice(0, visibleCoversCount).map((cover: string) => this._renderCover(cover))}
+                        ${covers.slice(0, visibleCovers).map((cover: string) => this._renderCover(cover))}
                     </div>
                 ` : ''}
             </div>
@@ -612,7 +668,7 @@ export class LightControlCard extends LitElement {
 
       // Add context menu listener for "Small" layout long-press
       const contextHandler = (e: Event) => {
-          if (this._layout === 'small') {
+          if (!this._computed.supports2D) {
               e.preventDefault();
               this._openMoreInfo(entityId);
           }
@@ -650,10 +706,14 @@ export class LightControlCard extends LitElement {
 
   static get styles() {
     return css`
+      /* ═══════════════════════════════════════════
+         BASE
+         ═══════════════════════════════════════════ */
       :host {
         display: block;
         height: 100%;
       }
+
       ha-card {
         color: white;
         overflow: hidden;
@@ -665,252 +725,238 @@ export class LightControlCard extends LitElement {
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        height: 100%; /* Always fill the host container */
-        /* Center removed to allow top alignment */
+        height: 100%;
       }
-      
-      /* Layout sizing - Remove fixed heights/auto that prevent filling */
-      ha-card.compact {
-          /* Compact content is small, but if container is big, we fill it */
-          cursor: pointer;
+      ha-card:active { cursor: grabbing; }
+      ha-card.mode-compact { cursor: pointer; }
+
+      /* ═══════════════════════════════════════════
+         LAYOUT CONTAINER
+         Two modes: vertical (column) or horizontal (row)
+         ═══════════════════════════════════════════ */
+      .layout {
+        padding: 5px 10px; /* SIZES.PAD_V / SIZES.PAD_H */
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
       }
-      ha-card.medium {
-      }
-      
-      ha-card.small {
-      }
-      
-      ha-card.large {
+      .layout.mode-horizontal {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 12px;
       }
 
-      .layout-container {
-         padding: 5px 10px; /* Tighter padding for 1-row layouts */
-         width: 100%;
-         height: 100%;
-         box-sizing: border-box;
-         display: flex;
-         flex-direction: column;
-      }
-      
-      .layout-container.medium {
-          flex-direction: row;
-          align-items: center;
-          gap: 12px;
-      }
-
-      ha-card:active {
-        cursor: grabbing;
-      }
+      /* ═══════════════════════════════════════════
+         CONTENT WRAPPER
+         ═══════════════════════════════════════════ */
       .content {
         display: flex;
         flex-direction: column;
         height: 100%;
-        justify-content: flex-start; /* Default: packed at top */
-        gap: 8px;
-        pointer-events: none; /* Allow events to pass through wrapper, but children re-enable if needed */
+        gap: 8px; /* SIZES.CONTENT_GAP */
+        pointer-events: none;
         flex: 1;
-        min-height: 0; /* Allow shrinking */
-      }
-      .large .content {
-          justify-content: space-between; /* 3+ rows (large): spread out */
+        min-height: 0;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
       }
 
-      .layout-container.medium .content {
-          flex-direction: row;
-          gap: 12px;
-          justify-content: flex-start; 
-          align-items: stretch; /* Allow children to decide vertical pos */
+      /* Vertical with covers: push covers to bottom */
+      .mode-vertical .content {
+        justify-content: space-between;
       }
-      
-      .layout-container.medium .header {
-          align-self: flex-start; /* Stay Top */
+      /* Vertical without covers: pack at top */
+      .mode-compact .content {
+        justify-content: flex-start;
       }
-      
-      .layout-container.medium .covers-section {
-          align-self: flex-end; /* Push to Bottom */
-          padding-bottom: 4px; /* Ensure not flush with very edge if padding is tight */
+
+      /* Horizontal: side-by-side */
+      .mode-horizontal .content {
+        flex-direction: row;
+        gap: 12px;
+        justify-content: flex-start;
+        align-items: stretch;
       }
 
       .content > * {
-         pointer-events: auto;
+        pointer-events: auto;
       }
-      
-      /* HEADER */
+
+      /* ═══════════════════════════════════════════
+         HEADER
+         ═══════════════════════════════════════════ */
       .header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        flex: 0 0 auto; /* Do not grow, stay compact */
-        width: 100%; /* Ensure it takes width */
+        gap: 12px; /* SIZES.HEADER_GAP */
+        flex: 0 0 auto;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
       }
-      /* In medium layout, header doesn't need to flex-grow heavily if side-by-side */
-      .layout-container.medium .header {
-          flex: 0 1 auto; /* Allow shrinking */
-          min-width: 120px; /* Reduced from 180px */
-          width: auto;
+      .mode-horizontal .header {
+        align-self: flex-start; /* Pin to top in horizontal */
+        min-width: 120px; /* SIZES.HEADER_MIN_W */
+        width: auto;
       }
 
       .icon-container {
-        flex: 0 0 auto; /* Never shrink */
+        flex: 0 0 40px; /* SIZES.ICON — never shrink, never grow */
+        width: 40px;
+        height: 40px;
         background: rgba(255, 255, 255, 0.2);
         border-radius: 50%;
-        width: 40px; /* Reduced from 48px */
-        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: background 0.2s;
       }
       .icon-container:hover {
-          background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
       }
+
       .info {
         flex: 1;
         display: flex;
         flex-direction: column;
+        min-width: 0; /* Allow text truncation */
       }
       .name {
         font-weight: 600;
         font-size: 1.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .state {
         opacity: 0.8;
         font-size: 0.9rem;
       }
 
-      /* CURSOR */
-      .cursor {
-        position: absolute;
-        top: 0; 
-        left: 0;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 2px solid rgba(255,255,255,0.8);
-        background: rgba(255,255,255,0.2);
-        box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        pointer-events: none;
-        transition: opacity 0.2s;
-        will-change: transform;
-        z-index: 10;
-        /* -20px to center on finger (done in transform) */
-        /* But due to finger blocking view, usually users prefer cursor slightly above finger */
-        /* I used -45px for Y in the render method to show it above the finger */
-      }
-
-      /* COVERS */
+      /* ═══════════════════════════════════════════
+         COVERS SECTION
+         ═══════════════════════════════════════════ */
       .covers-section {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 12px;
-        /* Ensure distinct visual area */
-        background: rgba(0,0,0,0.2);
-        margin: -12px;
-        margin-top: 0;
-        padding: 12px;
+        gap: 8px; /* SIZES.COVER_GAP */
+        background: rgba(0, 0, 0, 0.2);
         backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px; /* SIZES.COVER_SECTION_PAD / 2 each side */
+        margin: 0 -10px -5px; /* Bleed to edges */
       }
-      /* In medium layout, covers are on the side, remove top border/margins */
-      .layout-container.medium .covers-section {
-         border-top: none;
-         margin: 0;
-         background: none;
-         backdrop-filter: none;
-         padding: 0;
-         flex: 1;
-         justify-content: center;
+
+      /* Horizontal mode: covers float on the right side */
+      .mode-horizontal .covers-section {
+        border-top: none;
+        margin: 0;
+        background: none;
+        backdrop-filter: none;
+        padding: 0;
+        flex: 1;
+        align-self: flex-end; /* Pin to bottom */
+        justify-content: flex-end;
       }
 
       .cover-row {
         display: flex;
         align-items: center;
         gap: 8px;
-        /* Removed background for row, using slider backgrounds */
       }
       .cover-info {
         display: flex;
         align-items: center;
         justify-content: center;
         width: 32px;
-        flex: 0 0 auto;
+        flex: 0 0 32px;
       }
       .cover-sliders {
-          flex: 1;
-          display: flex;
-          flex-direction: row;
-          gap: 8px;
-          min-width: 0; /* Allow shrinking */
-      }
-      
-      .slider-control {
-          position: relative;
-          height: 42px; /* Match vacuum card (34px handle + 4px top/bottom) */
-          border-radius: 12px;
-          background: rgba(0,0,0,0.3); /* Dark track */
-          box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); /* Pressed in */
-          cursor: pointer; /* Click allowed, implemented relative drag */
-          touch-action: none;
-          flex: 1;
-          display: flex;
-          align-items: center;
-          /* No padding, we absolute position handle */
-          overflow: hidden; /* Contain fill */
-          min-width: 80px; /* Force minimum width, else wrap? no wrap logic yet */
-      }
-      .slider-control:active {
-          cursor: grabbing;
-      }
-      /* Remove slider-track border since we use background */
-      .slider-track {
-          display: none; 
-      }
-      .slider-fill {
-          position: absolute;
-          top: 0; left: 0; bottom: 0;
-          background: linear-gradient(to right, rgba(255,255,255,0.25) calc(100% - 34px), rgba(255,255,255,0) 100%);
-          border-radius: 12px 0 0 12px;
-          pointer-events: none;
-      }
-      .slider-handle {
-          position: absolute;
-          top: 4px;
-          bottom: 4px;
-          width: 34px; /* Fixed width */
-          
-          /* Glass Style */
-          background: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(4px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          pointer-events: none;
-          z-index: 2;
-          
-          /* Centering Icon if we added one later */
-          display: flex;
-          align-items: center;
-          justify-content: center;
-      }
-      .slider-label {
-          position: absolute;
-          left: 0; right: 0;
-          text-align: center;
-          font-size: 0.75rem; /* Slightly smaller */
-          font-weight: 600;
-          color: rgba(255,255,255,0.8);
-          pointer-events: none;
-          z-index: 3; /* Above handle */
-          text-shadow: 0 1px 2px black;
-          white-space: nowrap; /* Prevent wrap */
-          overflow: hidden;
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        min-width: 0;
       }
 
-      .header, .content {
-          text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      /* ═══════════════════════════════════════════
+         SLIDERS
+         ═══════════════════════════════════════════ */
+      .slider-control {
+        position: relative;
+        height: 42px; /* SIZES.COVER_ROW_H */
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        touch-action: none;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        min-width: 80px;
+      }
+      .slider-control:active {
+        cursor: grabbing;
+      }
+      .slider-fill {
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0.25) calc(100% - 34px),
+          rgba(255, 255, 255, 0) 100%
+        );
+        border-radius: 12px 0 0 12px;
+        pointer-events: none;
+      }
+      .slider-handle {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        width: 34px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .slider-label {
+        position: absolute;
+        left: 0; right: 0;
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.8);
+        pointer-events: none;
+        z-index: 3;
+        text-shadow: 0 1px 2px black;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      /* ═══════════════════════════════════════════
+         2D CURSOR
+         ═══════════════════════════════════════════ */
+      .cursor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+        transition: opacity 0.2s;
+        will-change: transform;
+        z-index: 10;
       }
     `;
   }
