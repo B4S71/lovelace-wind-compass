@@ -22,12 +22,14 @@ export class LightControlCard extends LitElement {
     return {
       hass: { attribute: false },
       config: { state: true },
-      _interacting: { state: true }
+      _interacting: { state: true },
+      _cursorPos: { state: true }
     };
   }
 
   // Internal state
   _interacting = false;
+  _cursorPos = { x: 0, y: 0 };
   _activeSlider: { 
     entityId: string; 
     type: 'position' | 'tilt'; 
@@ -131,12 +133,21 @@ export class LightControlCard extends LitElement {
 
   private _startInteraction() {
      this._longPressTimer = null;
+     
+     const card = this.shadowRoot?.querySelector('ha-card');
+     if (card) {
+        const rect = card.getBoundingClientRect();
+        this._cursorPos = {
+            x: this._pointerStartX - rect.left,
+            y: this._pointerStartY - rect.top
+        };
+     }
+     
      this._interacting = true;
      
      // Haptic feedback
      if (navigator.vibrate) navigator.vibrate(50);
      
-     const card = this.shadowRoot?.querySelector('ha-card');
      if (card && this._pendingPointerId !== null) {
          try {
              card.setPointerCapture(this._pendingPointerId);
@@ -230,8 +241,15 @@ export class LightControlCard extends LitElement {
     e.preventDefault();
     e.stopPropagation();
 
-    // Visual feedback logic (optional: can be used to show reticle or update internal state)
-    // We could requestUpdate here if we wanted to show a cursor
+    // Update cursor position
+    const card = this.shadowRoot?.querySelector('ha-card');
+    if (card) {
+        const rect = card.getBoundingClientRect();
+        this._cursorPos = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
   }
 
   private _handleSliderDown(e: PointerEvent, entityId: string, type: 'position' | 'tilt', currentVal: number) {
@@ -381,6 +399,14 @@ export class LightControlCard extends LitElement {
                 </div>
             ` : ''}
         </div>
+
+        <!-- 2D INTERACTION CURSOR -->
+        <div class="cursor" 
+             style="
+                opacity: ${this._interacting ? '1' : '0'};
+                transform: translate(${this._cursorPos.x - 20}px, ${this._cursorPos.y - 45}px);
+             "
+        ></div>
       </ha-card>
     `;
   }
@@ -502,6 +528,25 @@ export class LightControlCard extends LitElement {
         font-size: 0.9rem;
       }
 
+      /* CURSOR */
+      .cursor {
+        position: absolute;
+        top: 0; 
+        left: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.8);
+        background: rgba(255,255,255,0.2);
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        pointer-events: none;
+        transition: opacity 0.2s;
+        will-change: transform;
+        z-index: 10;
+        /* -20px to center on finger (done in transform) */
+        /* But due to finger blocking view, usually users prefer cursor slightly above finger */
+        /* I used -45px for Y in the render method to show it above the finger */
+      }
 
       /* COVERS */
       .covers-section {
