@@ -29,6 +29,7 @@ export class LightControlCard extends LitElement {
   // Internal state
   _interacting = false;
   _interactionMode: 'light' | 'cover' = 'light';
+  _interactState: string = '';
   private _pointerStartTime = 0;
   private _pointerStartX = 0;
   private _pointerStartY = 0;
@@ -148,8 +149,28 @@ export class LightControlCard extends LitElement {
     }
   }
 
-  private _handlePointerMove(_e: PointerEvent) {
-    // Optional: Real-time update of local state
+  private _handlePointerMove(e: PointerEvent) {
+    if (!this._interacting) return;
+
+    // Calc visual feedback state but don't apply yet
+    // This provides the numbers for the status bar
+    const card = this.shadowRoot?.querySelector('ha-card');
+    if (card) {
+        const rect = card.getBoundingClientRect();
+        const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+        if (this._interactionMode === 'light') {
+            const brightness = Math.round((1 - y) * 100);
+            this._interactState = `Brightness: ${brightness}%`;
+        } else {
+            const position = Math.round((1 - x) * 100);
+            this._interactState = `Position: ${position}%`;
+            // Optional: Tilt
+            const tilt = Math.round((1 - y) * 100);
+            this._interactState += ` | Tilt: ${tilt}%`;
+        }
+    }
   }
 
   private _applyCoverState(e: PointerEvent, card: Element) {
@@ -240,7 +261,18 @@ export class LightControlCard extends LitElement {
     if (this._interacting) {
       if (this._interactionMode === 'cover') {
            // Cover Gradient: Left (Bright/Open) -> Right (Dark/Close)
-           bgStyle = `background: linear-gradient(to right, #90caf9 0%, #0d47a1 100%);`;
+           // Pattern: Clear at top (transparent), tighter striped at bottom (opaque)
+           
+           // Layer 1 (Stripe Pattern): Repeating lines
+           // Layer 2 (Vertical Fade - Masking opacity): Transparent top -> Black bottom
+           // Layer 3 (Base Gradient): Sky Blue (Left) -> Dark Gray (Right)
+           
+           const stripes = `repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(0,0,0,0.2) 19px, rgba(0,0,0,0.2) 20px)`;
+           const verticalFade = `linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(0,0,0,0.4) 100%)`;
+           const baseGradient = `linear-gradient(to right, #87CEEB 0%, #333333 100%)`;
+
+           // Composition: Bottom layer is base, then stripes, then potential fade
+           bgStyle = `background: ${verticalFade}, ${stripes}, ${baseGradient};`;
       } else {
            // 2D Map: X=Temp (Blue->Orange), Y=Bright (White->Black)
            bgStyle = `background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%), linear-gradient(to right, rgb(166, 209, 255) 0%, rgb(255, 160, 0) 100%);`;
@@ -258,6 +290,12 @@ export class LightControlCard extends LitElement {
              const b = 255 - (105 * ratio);
              bgStyle = `background: linear-gradient(135deg, rgb(${r},${g},${b}) 0%, rgb(${Math.round(r*0.6)},${Math.round(g*0.6)},${Math.round(b*0.6)}) 100%);`;
         }
+    }
+
+    // Determine status text for bottom bar
+    let statusText = '';
+    if (this._interacting) {
+        statusText = this._interactState;
     }
 
     return html`
@@ -286,6 +324,11 @@ export class LightControlCard extends LitElement {
                     ${covers.map((cover: string) => this._renderCover(cover))}
                 </div>
             ` : ''}
+        </div>
+        
+        <!-- INTERACTION STATUS BAR -->
+        <div class="status-bar" style="opacity: ${this._interacting ? '1' : '0'}">
+            ${statusText}
         </div>
       </ha-card>
     `;
@@ -421,6 +464,22 @@ export class LightControlCard extends LitElement {
       }
       .control-btn ha-icon {
         --mdc-icon-size: 20px;
+      }
+      
+      .status-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 12px;
+          background: rgba(0,0,0,0.5);
+          color: white;
+          text-align: center;
+          font-weight: bold;
+          font-size: 1.1rem;
+          pointer-events: none;
+          transition: opacity 0.2s;
+          backdrop-filter: blur(4px);
       }
     `;
   }

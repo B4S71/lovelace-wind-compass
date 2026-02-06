@@ -20,6 +20,7 @@ export declare class LightControlCard extends LitElement {
     };
     _interacting: boolean;
     _interactionMode: 'light' | 'cover';
+    _interactState: string;
     private _pointerStartTime;
     private _pointerStartX;
     private _pointerStartY;
