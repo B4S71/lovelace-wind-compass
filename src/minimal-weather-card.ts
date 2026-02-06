@@ -454,7 +454,20 @@ export class MiniWeatherCard extends LitElement {
 
             ${showForecast ? html`
                 <div class="forecast-list">
-                    ${forecast.map((day: ForecastData) => this._renderRow(day))}
+                    ${(() => {
+                      let globalMin = Infinity, globalMax = -Infinity;
+                      for (const f of forecast) {
+                        const hi = f.temperature ?? f.temp_max;
+                        const lo = f.templow ?? f.temp_min;
+                        if (lo !== undefined && lo < globalMin) globalMin = lo;
+                        if (hi !== undefined && hi > globalMax) globalMax = hi;
+                        if (lo === undefined && hi !== undefined && hi < globalMin) globalMin = hi;
+                      }
+                      if (!isFinite(globalMin)) globalMin = 0;
+                      if (!isFinite(globalMax)) globalMax = globalMin + 1;
+                      if (globalMax === globalMin) globalMax = globalMin + 1;
+                      return forecast.map((day: ForecastData) => this._renderRow(day, globalMin, globalMax));
+                    })()}
                     ${fullForecast.length === 0 ? html`<div class="loading">Lade...</div>` : ''}
                 </div>
             ` : html`<div style="flex:1;"></div>`} 
@@ -465,7 +478,7 @@ export class MiniWeatherCard extends LitElement {
     `;
   }
 
-  _renderRow(day: ForecastData) {
+  _renderRow(day: ForecastData, globalMin: number = 0, globalMax: number = 1) {
     const date = new Date(day.datetime);
     const isHourly = this.config.mode === 'hourly';
     const label = isHourly ? date.toLocaleTimeString(this.hass.language, { hour: '2-digit', minute: '2-digit' }) : date.toLocaleDateString(this.hass.language, { weekday: 'short' });
@@ -473,7 +486,12 @@ export class MiniWeatherCard extends LitElement {
     const low = day.templow ?? day.temp_min;
 
     if (isHourly && temp !== undefined) return html`<div class="row hourly"><div class="day-name">${label}</div><div class="icon-small"><ha-icon icon="${this._getIcon(day.condition)}"></ha-icon></div><div class="temp-single">${Math.round(temp)}°</div></div>`;
-    else if (low !== undefined && temp !== undefined) return html`<div class="row"><div class="day-name">${label}</div><div class="icon-small"><ha-icon icon="${this._getIcon(day.condition)}"></ha-icon></div><div class="bars"><span class="val-low">${Math.round(low)}°</span><div class="bar-track"><div class="bar-fill"></div></div><span class="val-high">${Math.round(temp)}°</span></div></div>`;
+    else if (low !== undefined && temp !== undefined) {
+      const range = globalMax - globalMin;
+      const leftPct = ((low - globalMin) / range) * 100;
+      const rightPct = ((globalMax - temp) / range) * 100;
+      return html`<div class="row"><div class="day-name">${label}</div><div class="icon-small"><ha-icon icon="${this._getIcon(day.condition)}"></ha-icon></div><div class="bars"><span class="val-low">${Math.round(low)}°</span><div class="bar-track"><div class="bar-fill" style="left:${leftPct}%;right:${rightPct}%"></div></div><span class="val-high">${Math.round(temp)}°</span></div></div>`;
+    }
     return html``;
   }
 
@@ -548,7 +566,7 @@ export class MiniWeatherCard extends LitElement {
       .val-low { opacity: 0.6; width: 25px; text-align: right; }
       .val-high { font-weight: 500; width: 25px; text-align: right; }
       .bar-track { flex-grow: 1; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; position: relative; min-width: 50px; max-width: 100px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); }
-      .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; right: 0; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); opacity: 0.8; }
+      .bar-fill { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 50%, #f5af19 100%); border-radius: 3px; opacity: 0.85; transition: left 0.4s ease, right 0.4s ease; }
       .hourly .temp-single { text-align: right; font-weight: 500; padding-right: 5px; }
       .footer { margin-top: auto; padding-top: 6px; text-align: center; font-size: 0.75rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; flex: 0 0 auto; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 300; }
       .loading { text-align: center; font-size: 0.8rem; opacity: 0.5; padding: 10px; }
